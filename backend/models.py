@@ -3,7 +3,9 @@ from typing import List, Optional
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-from helpers.enums import RecurrenceType, TaskPriority, TaskStatus
+
+from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
+
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -14,6 +16,7 @@ class User(SQLModel, table=True):
     tasks: List["Task"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+
 
 class Task(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
