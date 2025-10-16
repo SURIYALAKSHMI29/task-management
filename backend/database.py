@@ -1,7 +1,5 @@
 from sqlmodel import Session, SQLModel, create_engine
 
-import models
-
 engine = create_engine(
     "sqlite:///task_management.db", connect_args={"check_same_thread": False}
 )

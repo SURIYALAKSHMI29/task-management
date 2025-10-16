@@ -14,7 +14,6 @@ class TaskStatus(Enum):
 
 
 class RecurrenceType(Enum):
-    NONE = "none"
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"

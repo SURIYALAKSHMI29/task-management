@@ -35,7 +35,7 @@ def verify_user_password(email: EmailStr, password: str, session: Session) -> Us
 
 # check if the email already exists
 def validate_email(email: EmailStr, session: Session) -> bool:
-    user = session.get(User, email)
+    user = session.exec(select(User).where(User.email == email)).first()
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
     return True
