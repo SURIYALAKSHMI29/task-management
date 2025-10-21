@@ -2,9 +2,13 @@ import time
 
 import requests
 import streamlit as st
+from authlib.integrations.requests_client import OAuth2Session
 from pages.login import login_page
 from pages.register import register_page
 from streamlit_modal import Modal
+from styles.home_css import inject_css
+
+inject_css()
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -12,9 +16,13 @@ if "logged_in" not in st.session_state:
 if "active_modal" not in st.session_state:
     st.session_state.active_modal = None
 
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
+
 login_modal = Modal("Login", key="login-modal", padding=20, max_width=900)
 
 register_modal = Modal("Register", key="register-modal", padding=20, max_width=900)
+
 
 # def open_login_modal():
 #     st.session_state.active_modal = "login-modal"
@@ -37,7 +45,15 @@ if st.session_state.active_modal == "register-modal":
             register_page(register_modal)
 
 
-st.title("GoGetter")
+st.markdown('<h1 class="stTitle">GoGetter</h1>', unsafe_allow_html=True)
+st.markdown(
+    '<h2 class="stHeader">A goal without a timeline is just a Dream</h2>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<h3 class="stSubheader">Manage your tasks Efficiently!</h3>',
+    unsafe_allow_html=True,
+)
 
 if not st.session_state.logged_in:
     with st.container():
@@ -54,9 +70,6 @@ else:
         st.button("Log out", on_click=logout)
 
 
-st.header("A goal without a timeline is just a Dream")
-st.subheader("Manage your tasks Efficiently!")
-
 if not st.session_state.logged_in:
     st.write("Get better experience by loggin in")
 
@@ -72,13 +85,16 @@ completed_tasks_page = st.Page(
     "pages/completed_tasks.py", title="Completed tasks", icon=":material/check_circle:"
 )
 
+auth_callback = st.Page("pages/auth_callback.py")
 
 pg = st.navigation(
     {
         "Search": [search_page],
         "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page],
         "Profile": [profile_page],
+        "auth": [auth_callback],
     }
 )
 
+print("user_email:", st.session_state.user_email)
 pg.run()
