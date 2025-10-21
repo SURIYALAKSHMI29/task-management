@@ -39,7 +39,6 @@ if st.session_state.active_modal == "register-modal":
 
 st.title("GoGetter")
 
-
 if not st.session_state.logged_in:
     with st.container():
         login_bt = st.button("Log in")
@@ -60,3 +59,26 @@ st.subheader("Manage your tasks Efficiently!")
 
 if not st.session_state.logged_in:
     st.write("Get better experience by loggin in")
+
+search_page = st.Page("pages/search.py", title="Search tasks", icon=":material/search:")
+tasks_page = st.Page("pages/tasks.py", title="Tasks", icon=":material/hourglass_top:")
+profile_page = st.Page(
+    "pages/profile.py", title="Profile", icon=":material/account_circle:"
+)
+upcoming_tasks_page = st.Page(
+    "pages/upcoming_tasks.py", title="Upcoming tasks", icon=":material/schedule:"
+)
+completed_tasks_page = st.Page(
+    "pages/completed_tasks.py", title="Completed tasks", icon=":material/check_circle:"
+)
+
+
+pg = st.navigation(
+    {
+        "Search": [search_page],
+        "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page],
+        "Profile": [profile_page],
+    }
+)
+
+pg.run()
