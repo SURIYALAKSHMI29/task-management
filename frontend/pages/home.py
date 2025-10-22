@@ -40,7 +40,7 @@ def display_task(task):
             <div class="taskTitle">{task['title']}</div>
             <div class="taskDescription">{task['description']}</div>
             <div class="taskInfo">
-                <div class="taskDeadline">{task['deadline']}</div>
+                <div class="taskDeadline">{datetime.fromisoformat(deadline).date()}</div>
                 <div class="taskPriority">{task['priority']}</div>
                 <div class="taskRepetitiveType">{task['repetitive_type']}</div>
             </div
@@ -131,7 +131,6 @@ else:
         if status == "pending":
             if task.get("pinned"):
                 print("pinned", task)
-                task["deadline"] = datetime.fromisoformat(task.get("deadline")).date() if task.get("deadline") else None
                 pinned_tasks.append(task)
             else:
                 deadline = task.get("deadline")
@@ -142,7 +141,6 @@ else:
                     print("today deadline", task)
                     task_date = datetime.fromisoformat(deadline).date()
                     if task_date == today:
-                        task["deadline"] = task_date
                         today_tasks.append(task)
                 
                 elif repetitive_type == RecurrenceType.DAILY and today<repeat_until:
