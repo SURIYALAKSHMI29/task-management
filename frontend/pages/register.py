@@ -43,7 +43,10 @@ def register_page(modal: Modal):
                 f"&response_type=code&scope=openid email profile"
             )
             st.write("Redirect URI used:", st.secrets["auth"]["redirect_uri"])
-            st.markdown(f"[Verify with Google]({verify_url})", unsafe_allow_html=True)
+            st.markdown(
+                f'<a href="{verify_url}" target="_self"><button>Continue with Google</button></a>',
+                unsafe_allow_html=True,
+            )
 
         if st.session_state.get("user_email") is not None:
             google_email = st.session_state.get("user_email")
