@@ -13,4 +13,3 @@ def on_startup():
 
 app.include_router(users.router, prefix="/user", tags=["user"])
 app.include_router(tasks.router, prefix="/task", tags=["task"])
-app.include_router(tasks.router, prefix="/task", tags=["task"])
