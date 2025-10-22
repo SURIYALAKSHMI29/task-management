@@ -33,7 +33,6 @@ if "today_tasks" not in st.session_state:
 
 
 home_page = st.Page("pages/home.py", title="GoGetter", icon=":material/home:")
-search_page = st.Page("pages/search.py", title="Search tasks", icon=":material/search:")
 tasks_page = st.Page("pages/tasks.py", title="Tasks", icon=":material/hourglass_top:")
 profile_page = st.Page(
     "pages/profile.py", title="Profile", icon=":material/account_circle:"
@@ -47,7 +46,7 @@ completed_tasks_page = st.Page(
 
 pg = st.navigation(
     {
-        "": [home_page,search_page, profile_page],
+        "": [home_page, profile_page],
         "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page]
     }
 )
