@@ -81,7 +81,7 @@ def add_task(
     task_data = task_in.model_dump(exclude_unset=True)
     task_data["user_id"] = user.id
 
-    task_data["pinned"] = task_data["pinned"] and check_pinned_tasks(user.id, session)
+    task_data["pinned"] = task_data.get("pinned", False) and check_pinned_tasks(user.id, session)
 
     task = add_to_db(Task(**task_data), session)
     if repetitive_type or repeat_until:
@@ -112,6 +112,8 @@ def update_task(
     for key, value in task_data.items():
         if key == "pinned":
             value = task_data["pinned"] and check_pinned_tasks(task.user_id, session)
+        if key == "status" and value:
+            value = TaskStatus(value)
         setattr(task, key, value)
 
     if remove_recurring:
