@@ -1,13 +1,10 @@
 import streamlit as st
 
 CSS = """
-/* Page background and general text */
 body {
-    background-color: #f5f5f5;
     font-family: 'Arial', sans-serif;
 }
 
-/* App title */
 .stTitle {
     color: #1f2937;
     font-size: 3rem;
@@ -21,7 +18,7 @@ body {
     text-align: left;
     margin-bottom: 2rem;
 }
-/* Subheader */
+
 .stSubheader {
     color: #4b5563;
     font-size: 1rem;
@@ -29,7 +26,7 @@ body {
     margin-bottom: 2rem;
 }
 
-/* Buttons */
+
 div.stButton > button {
     background-color: #4f46e5;
     color: white;
