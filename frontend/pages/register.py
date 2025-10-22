@@ -9,7 +9,7 @@ def register_page(modal: Modal):
     if "pending_registration" not in st.session_state:
         st.session_state.pending_registration = None
 
-    # Verify email via Google login
+    # verify user email via google OAuth
     if st.session_state.user_email is None:
         st.write("Please verify your email using Google login")
 
@@ -48,7 +48,7 @@ def register_page(modal: Modal):
                     }
                     st.rerun() 
 
-        # Submit registration data to backend
+        # submit registration data to backend
         if st.session_state.pending_registration is not None:
             st.write("Registering your account, please wait...")
             response = requests.post(
