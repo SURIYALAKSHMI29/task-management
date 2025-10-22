@@ -51,8 +51,9 @@ def register_page(modal: Modal):
         # submit registration data to backend
         if st.session_state.pending_registration is not None:
             st.write("Registering your account, please wait...")
+            backend_url = st.secrets["backend"]["user_url"]
             response = requests.post(
-                "http://localhost:8000/user/register",
+                f"{backend_url}/register",
                 json=st.session_state.pending_registration,
             )
             if response.status_code == 201:
