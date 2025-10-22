@@ -11,8 +11,9 @@ def login_page(modal: Modal):
     if st.button("Submit"):
         if email and password:
             try:
+                backend_url = st.secrets["backend"]["user_url"]
                 response = requests.post(
-                    "http://localhost:8000/user/login",
+                    f"{backend_url}/login",
                     json={"email": email, "password": password},
                 )
                 if response.status_code == 200:
@@ -22,6 +23,7 @@ def login_page(modal: Modal):
                     time.sleep(2)
                     st.session_state.access_token = data.get("access_token")
                     st.session_state.user = data.get("user")
+                    st.session_state.user_email = data.get("user")["email"]
                     st.session_state.active_modal = None
                     modal.close()
                 else:
