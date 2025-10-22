@@ -12,6 +12,9 @@ if "active_modal" not in st.session_state:
 if "user_email" not in st.session_state:
     st.session_state.user_email = None
 
+if "pending_registration" not in st.session_state:
+        st.session_state.pending_registration = None
+
 
 # def open_login_modal():
 #     st.session_state.active_modal = "login-modal"
@@ -41,6 +44,11 @@ pg = st.navigation(
     }
 )
 
-print("user_email:", st.session_state.user_email)
 
+print("modal state:", st.session_state.active_modal)
+print("logged_in state:", st.session_state.logged_in)
+print("user_email:", st.session_state.user_email)
+print("pending_registration:",st.session_state.pending_registration)
+
+print()
 pg.run()

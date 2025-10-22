@@ -39,19 +39,23 @@ if "code" in params and st.session_state.get("user_email") is None:
     try:
         if "counter" not in st.session_state:
             st.session_state.counter = 0
-
+        print(params)
         st.session_state.counter += 1
         print("Token fetching attempt: {st.session_state.counter}")
+        code = params.get("code")
+        print("code:", code)
         oauth.fetch_token(
             token_url,
-            code=params["code"][0],
+            code=code,
         )
         print("Token fetched{st.session_state.counter}")
 
         user_info = oauth.get(userinfo_endpoint).json()
         st.session_state.user_email = user_info["email"]
         print("Successfully set user_email:", st.session_state.user_email)
-        st.switch_page("home")
+        st.session_state.active_modal = "register-modal"
+        register_modal.open()
+        
     except Exception as e:
         print("Error fetching token:", e)
 
