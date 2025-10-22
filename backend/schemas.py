@@ -27,8 +27,9 @@ class UserLoginResponse(BaseModel):
 class TaskIn(BaseModel):
     user_id: Optional[int] = None
     title: str
-    description: str
+    description: Optional[str] = None
     deadline: Optional[datetime] = None
+    status: Optional[TaskStatus] = TaskStatus.PENDING
     priority: Optional[TaskPriority] = TaskPriority.MEDIUM
     pinned: Optional[bool] = False
 
@@ -36,7 +37,7 @@ class TaskIn(BaseModel):
 class TaskOut(BaseModel):
     id: int
     title: str
-    description: str
+    description: Optional[str] = None
     deadline: datetime | None
     priority: TaskPriority
     status: TaskStatus

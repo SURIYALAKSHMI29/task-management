@@ -22,7 +22,7 @@ class Task(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
     user_id: int = Field(foreign_key="user.id")
     title: str
-    description: str
+    description: Optional[str] = Field(default=None)
     deadline: Optional[datetime] = Field(default=None)
     priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
     status: Optional[TaskStatus] = Field(default=TaskStatus.PENDING)
