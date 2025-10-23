@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr
@@ -28,7 +28,7 @@ class TaskIn(BaseModel):
     user_id: Optional[int] = None
     title: str
     description: Optional[str] = None
-    deadline: Optional[datetime] = None
+    deadline: Optional[date] = None
     status: Optional[TaskStatus] = TaskStatus.PENDING
     priority: Optional[TaskPriority] = TaskPriority.MEDIUM
     pinned: Optional[bool] = False
@@ -38,11 +38,11 @@ class TaskOut(BaseModel):
     id: int
     title: str
     description: Optional[str] = None
-    deadline: datetime | None
+    deadline: date | None
     priority: TaskPriority
     status: TaskStatus
     pinned: bool
     repetitive_type: Optional[RecurrenceType] = None
-    repeat_until: Optional[datetime] = None
+    repeat_until: Optional[date] = None
 
     model_config = {"from_attributes": True}  # allows reading from ORM/SQLModel objects
