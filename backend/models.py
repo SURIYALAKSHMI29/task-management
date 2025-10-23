@@ -48,7 +48,7 @@ class Task(SQLModel, table=True):
 class RecurringTask(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
     task_id: int = Field(foreign_key="task.id")
-    repetitive_type: RecurrenceType | None = Field(default=RecurrenceType.MONTHLY)
+    repetitive_type: RecurrenceType
     repeat_until: date | None = Field(default=None)
     task: "Task" = Relationship(back_populates="recurring_task")
     __table_args__ = (Index("idx_recurring_task_task_id", "task_id"),)
