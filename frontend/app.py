@@ -3,10 +3,7 @@ from styles.app_css import inject_css
 
 inject_css()
 
-st.set_page_config(
-    layout="wide", 
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -47,7 +44,7 @@ completed_tasks_page = st.Page(
 pg = st.navigation(
     {
         "": [home_page, profile_page],
-        "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page]
+        "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page],
     }
 )
 
@@ -55,7 +52,7 @@ pg = st.navigation(
 print("modal state:", st.session_state.active_modal)
 print("logged_in state:", st.session_state.logged_in)
 print("user_email:", st.session_state.user_email)
-print("pending_registration:",st.session_state.pending_registration)
+print("pending_registration:", st.session_state.pending_registration)
 
 print()
 pg.run()
