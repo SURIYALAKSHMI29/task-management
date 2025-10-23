@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import List, Optional
 
 from pydantic import EmailStr
@@ -12,7 +12,7 @@ class User(SQLModel, table=True):
     name: str
     password: str
     email: EmailStr = Field(unique=True)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: date = Field(default_factory=date.today)
     tasks: List["Task"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
@@ -24,12 +24,12 @@ class Task(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     title: str
     description: Optional[str] = Field(default=None)
-    deadline: Optional[datetime] = Field(default=None)
+    deadline: Optional[date] = Field(default=None)
     priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
     status: Optional[TaskStatus] = Field(default=TaskStatus.PENDING)
     pinned: Optional[bool] = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: date = Field(default_factory=date.today)
+    updated_at: date = Field(default_factory=date.today)
     user: "User" = Relationship(back_populates="tasks")
     recurring_task: Optional["RecurringTask"] = Relationship(
         back_populates="task", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
@@ -49,7 +49,7 @@ class RecurringTask(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
     task_id: int = Field(foreign_key="task.id")
     repetitive_type: RecurrenceType | None = Field(default=RecurrenceType.MONTHLY)
-    repeat_until: datetime | None = Field(default=None)
+    repeat_until: date | None = Field(default=None)
     task: "Task" = Relationship(back_populates="recurring_task")
     __table_args__ = (Index("idx_recurring_task_task_id", "task_id"),)
 
@@ -57,9 +57,9 @@ class RecurringTask(SQLModel, table=True):
 class TaskHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     task_id: int = Field(foreign_key="task.id")
-    start: datetime
-    end: datetime
-    completed_at: Optional[datetime] = None
+    start: date
+    end: date
+    completed_at: Optional[date] = None
     task: "Task" = Relationship(back_populates="task_history")
 
-    __table_args__ = (Index("idx_task_history_task_id", "task_id"),)
+    __table_args__ = (Index("idx_history_task_id", "task_id"),)
