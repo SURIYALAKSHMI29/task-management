@@ -2,7 +2,8 @@ import calendar
 from datetime import date, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import EmailStr
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
 
@@ -243,8 +244,8 @@ def delete_task(
     return {"message": msg}
 
 
-@router.get("/history/{id}", response_model=list[TaskHistory])
-def get_history(
+@router.get("/history/{id}", response_model=TaskHistory)
+def get_task_history(
     id: int,
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -252,6 +253,29 @@ def get_history(
     task = get_task_by_id(id, session)
     if verify_current_user(task.user_id, current_user["user_email"], session):
         return task.task_history
+
+
+@router.post("/history")
+def get_history(
+    email: EmailStr = Body(...),
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    user_id = get_user_by_email(email, session).id
+    print(user_id)
+    if verify_current_user(user_id, current_user["user_email"], session):
+        tasks = session.exec(
+            select(Task, TaskHistory).join(TaskHistory).where(Task.user_id == user_id)
+        )
+        history_list = []
+        for task, history in tasks:
+            history_list.append(
+                {"task": task.model_dump(), "history": history.model_dump()}
+            )
+
+        return history_list
+
+    return []
 
 
 # @router.get("/recurring_tasks")
