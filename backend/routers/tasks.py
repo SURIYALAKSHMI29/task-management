@@ -195,6 +195,7 @@ def update_task(
     for key, value in task_data.items():
         if key == "pinned":
             value = task_data["pinned"] and check_pinned_tasks(task.user_id, session)
+            task.updated_at = date.today()
         if key == "status" and value:
             value = TaskStatus(value)
         if task.recurring_task and key == "status" and value == TaskStatus.COMPLETED:
