@@ -6,8 +6,8 @@ from authlib.integrations.requests_client import OAuth2Session
 from pages.login import login_page
 from pages.register import register_page
 from streamlit_modal import Modal
-from styles.home_css import inject_css
-from task_util import categorize_tasks, display_task, get_user_history, get_user_tasks
+from styles.task_css import inject_css
+from task_util import categorize_tasks, display_tasks, get_user_history, get_user_tasks
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if PROJECT_ROOT not in sys.path:
@@ -23,8 +23,24 @@ def logout():
         del st.session_state[key]
 
 
-login_modal = Modal("Login", key="login-modal", padding=20, max_width=900)
+login_modal = Modal("Login", key="login-modal", padding=20, max_width=400)
 register_modal = Modal("Register", key="register-modal", padding=20, max_width=900)
+
+st.markdown(
+    """
+    <style>
+        div[data-modal-container="true"] > div > div {
+            width: 700px !important;      
+            min-width: 500px !important;   
+            max-width: 90vw !important;  
+        }
+        div[data-modal-container="true"] > div > div >div{
+            min-width: 500px !important;      
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown('<h1 class="stTitle">GoGetter</h1>', unsafe_allow_html=True)
 st.markdown(
@@ -77,19 +93,18 @@ if not st.session_state.logged_in:
     with st.container():
         login_bt = st.button("Log in")
         register_bt = st.button("Register")
-        if login_bt:
-            st.session_state.active_modal = "login-modal"
-            login_modal.open()
-        if register_bt:
-            st.session_state.active_modal = "register-modal"
-            register_modal.open()
+    if login_bt:
+        st.session_state.active_modal = "login-modal"
+        login_modal.open()
+    if register_bt:
+        st.session_state.active_modal = "register-modal"
+        register_modal.open()
+    st.write("Get better experience by loggin in")
+
 else:
     with st.container():
         st.button("Log out", on_click=logout)
 
-if not st.session_state.logged_in:
-    st.write("Get better experience by loggin in")
-else:
     st.write(f"Have an energetic day {st.session_state.user["name"].capitalize()}!")
     get_user_tasks()
     get_user_history(st.session_state.user_email)
@@ -103,17 +118,15 @@ else:
         task_columns = st.columns([2, 1])
         with task_columns[0]:
             if len(st.session_state.today_tasks) >= 1:
-                st.markdown("### Today's Tasks 🗓️")
-                for task in today_tasks:
-                    display_task(task)
+                st.markdown("### Today's Tasks ")
+                display_tasks(today_tasks)
 
             else:
                 st.info("No tasks scheduled for today! ")
         with task_columns[1]:
             if len(pinned_tasks) >= 1:
                 st.markdown("### Pinned Tasks ")
-                for task in pinned_tasks:
-                    display_task(task)
+                display_tasks(pinned_tasks, icon="&#128204;")
             else:
                 st.info("No pinned tasks found! ")
 
