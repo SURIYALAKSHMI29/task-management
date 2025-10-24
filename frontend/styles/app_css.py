@@ -26,25 +26,17 @@ body {
     margin-bottom: 2rem;
 }
 
-
 div.stButton > button {
     background-color: #4f46e5;
     color: white;
     font-size: 1rem;
     border-radius: 8px;
-    padding: 0.6rem 1.2rem;
+    padding: 0.4rem 1rem;
     transition: 0.3s;
 }
 div.stButton > button:hover {
     background-color: #4338ca;
     cursor: pointer;
-}
-
-/* Modals */
-.stModal > div {
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* Logged-in user info */
