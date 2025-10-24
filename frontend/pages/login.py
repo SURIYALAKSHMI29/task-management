@@ -8,7 +8,7 @@ from streamlit_modal import Modal
 def login_page(modal: Modal):
     email = st.text_input("Email", key="email")
     password = st.text_input("Password", type="password", key="password")
-    if st.button("Submit"):
+    if st.button("Login"):
         if email and password:
             try:
                 backend_url = st.secrets["backend"]["user_url"]
