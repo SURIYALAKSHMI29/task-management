@@ -269,9 +269,10 @@ def get_history(
         )
         history_list = []
         for task, history in tasks:
-            history_list.append(
-                {"task": task.model_dump(), "history": history.model_dump()}
-            )
+            task_data = bind_task_details(task).model_dump()
+            history_data = history.model_dump()
+            task_history = {**task_data, **history_data}
+            history_list.append(task_history)
 
         return history_list
 
