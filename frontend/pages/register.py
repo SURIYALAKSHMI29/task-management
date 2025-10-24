@@ -19,7 +19,7 @@ def register_page(modal: Modal):
             f"&redirect_uri={st.secrets['auth']['redirect_uri']}"
             f"&response_type=code&scope=openid email profile"
         )
-        st.write("Redirect URI used:", st.secrets["auth"]["redirect_uri"])
+        # st.write("Redirect URI used:", st.secrets["auth"]["redirect_uri"])
         st.markdown(
             f'<a href="{verify_url}" target="_self"><button>Continue with Google</button></a>',
             unsafe_allow_html=True,
@@ -31,9 +31,13 @@ def register_page(modal: Modal):
             st.write("Complete your registration")
 
             name = st.text_input("Name", key="name")
-            st.text_input("Email (verified)", value=st.session_state.user_email, disabled=True)
+            st.text_input(
+                "Email (verified)", value=st.session_state.user_email, disabled=True
+            )
             password = st.text_input("Password", type="password", key="password")
-            cnf_password = st.text_input("Confirm Password", type="password", key="cnf_password")
+            cnf_password = st.text_input(
+                "Confirm Password", type="password", key="cnf_password"
+            )
 
             if st.button("Submit"):
                 if password != cnf_password:
@@ -46,7 +50,7 @@ def register_page(modal: Modal):
                         "email": st.session_state.user_email,
                         "password": password,
                     }
-                    st.rerun() 
+                    st.rerun()
 
         # submit registration data to backend
         if st.session_state.pending_registration is not None:
