@@ -1,27 +1,12 @@
 import streamlit as st
+from initialize_sessions import initialize_sessions
 from styles.app_css import inject_css
 
 inject_css()
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-if "active_modal" not in st.session_state:
-    st.session_state.active_modal = None
-
-if "user_email" not in st.session_state:
-    st.session_state.user_email = None
-
-if "pending_registration" not in st.session_state:
-    st.session_state.pending_registration = None
-
-if "user_tasks" not in st.session_state:
-    st.session_state.user_tasks = []
-
-if "today_tasks" not in st.session_state:
-    st.session_state.today_tasks = []
+initialize_sessions()
 
 # def open_login_modal():
 #     st.session_state.active_modal = "login-modal"
@@ -47,7 +32,6 @@ pg = st.navigation(
         "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page],
     }
 )
-
 
 print("modal state:", st.session_state.active_modal)
 print("logged_in state:", st.session_state.logged_in)
