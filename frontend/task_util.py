@@ -21,10 +21,10 @@ def get_user_tasks():
 @st.cache_data(ttl=3600)
 def get_user_history(user_email: EmailStr):
     payload = {"email": user_email}
-    print("Payload", payload)
+    # print("Payload", payload)
     backend_url = st.secrets["backend"]["task_url"]
     header = {"Authorization": f"Bearer {st.session_state.access_token}"}
-    print("Before response", user_email)
+    # print("Before response", user_email)
     response = requests.post(
         f"{backend_url}/history",
         headers=header,
@@ -46,10 +46,15 @@ def get_task_history(task_id):
 
     if response.status_code == 200:
         st.session_state.user_task_history = response.json()
+        print("returning user_task_history: ", st.session_state.user_task_history)
     else:
         st.error(
             f"Failed to fetch task history: {response.status_code} - {response.text}"
         )
+
+
+def sort_tasks(tasks, priority):
+    return sorted(tasks, key=lambda task: (task.get("end"), priority[task["priority"]]))
 
 
 def categorize_tasks(user_tasks, user_task_history):
@@ -79,12 +84,6 @@ def categorize_tasks(user_tasks, user_task_history):
         if status == "pending":
             if pinned:
                 pinned_tasks.append(task)
-
-            if deadline:
-                if deadline == today:
-                    task["start"] = today
-                    task["end"] = today
-                    today_tasks.append(task)
 
             if repetitive_type is not None and (
                 repeat_until is None or today <= repeat_until
@@ -121,33 +120,65 @@ def categorize_tasks(user_tasks, user_task_history):
                         task_copy = task.copy()
                         task_copy["start"] = today
                         today_tasks.append(task_copy)
+            elif deadline:
+                if deadline == today:
+                    task["start"] = today
+                    task["end"] = today
+                    today_tasks.append(task)
+                else:
+                    task["start"] = deadline
+                    task["end"] = deadline
+                    upcoming_tasks.append(task)
 
     for task in user_task_history:
+        # print("\n", task)
         if task.get("completed_at"):
+            # print("added to complete tasks\n")
             completed_tasks.append(task)
-        else:
+        elif datetime.strptime(task.get("end"), "%Y-%m-%d").date() < today:
+            # print("added to overdue tasks\n")
             overdue_tasks.append(task)
 
-    st.session_state.today_tasks = today_tasks
-    st.session_state.pinned_tasks = pinned_tasks
-    st.session_state.weekly_tasks = weekly_tasks
-    st.session_state.completed_tasks = completed_tasks
-    st.session_state.overdue_tasks = overdue_tasks
+    priority_order = {"high": 1, "medium": 2, "low": 3}
+    st.session_state.today_tasks = sort_tasks(today_tasks, priority_order)
+    st.session_state.pinned_tasks = sort_tasks(pinned_tasks, priority_order)
+    st.session_state.weekly_tasks = sort_tasks(weekly_tasks, priority_order)
+    st.session_state.completed_tasks = sort_tasks(completed_tasks, priority_order)
+    st.session_state.overdue_tasks = sort_tasks(overdue_tasks, priority_order)
     st.session_state.upcoming_tasks = upcoming_tasks
 
 
-def display_task(task):
+def display_task(task, completed, icon):
+    deadline = task.get("deadline")
+    # print(type(deadline), deadline, "condition status", (deadline is None))
+    if not deadline:
+        # print(task.get("start"), task.get("end"), task)
+        deadline = f"{task.get('start')} - {task.get('end')}"
+
     st.markdown(
         f"""
         <div class="taskContainer">
-            <div class="taskTitle">{task['title']}</div>
+            <span class="taskIcon">{icon if icon else ''}</span>
+            <span class="completedDate">{task.get('completed_at') if completed else ''}</span>
+            <div class="icon-bar">
+                <button class="icon-btn edit" title="Edit"></button>
+                <button class="icon-btn delete" title="Delete"></button>
+                <button class="icon-btn done" title="Done"></button>
+            </div>
+            <div class="taskTitle {"icon" if icon else ""}">{task.get('title')}</div>
             <div class="taskDescription">{task['description']}</div>
             <div class="taskInfo">
-                <div class="taskDeadline">{task['deadline']}</div>
-                <div class="taskPriority">{task['priority']}</div>
-                <div class="taskRepetitiveType">{task['repetitive_type']}</div>
-            </div
+                <div class="taskDeadline">{deadline}</div>
+                <div class="taskPriority">{task['priority'].capitalize()}</div>
+                <div class="taskRepetitiveType">{task['repetitive_type'] if task['repetitive_type'] else ""}</div>
+            </div>
         </div>
+
     """,
         unsafe_allow_html=True,
     )
+
+
+def display_tasks(tasks, completed=False, icon=None):
+    for task in tasks:
+        display_task(task, completed, icon)
