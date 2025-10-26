@@ -2,10 +2,8 @@ import time
 from datetime import date, datetime
 
 import streamlit as st
-from streamlit_calendar import calendar
-from streamlit_modal import Modal
-
 from frontend.styles.task_css import inject_css
+from streamlit_calendar import calendar
 
 inject_css()
 
@@ -15,9 +13,6 @@ if "edit_task_modal_open" not in st.session_state:
     st.session_state.edit_task_modal_open = False
 
 upcoming_tasks = st.session_state.upcoming_tasks
-
-task_modal = Modal("Task Details", key="task-modal", padding=20, max_width=900)
-
 
 st.markdown(
     """
@@ -37,9 +32,8 @@ st.markdown(
 )
 
 
-def close_modal(task_modal: Modal):
-    st.session_state["edit_task_modal_open"] = False
-    task_modal.close()
+def close_task():
+    st.session_state["edit_task"] = None
     st.rerun()
 
 
@@ -49,7 +43,8 @@ def get_isoformat_date(inp_date):
     return inp_date.isoformat()
 
 
-def show_task(task_modal: Modal):
+@st.dialog("Task Details")
+def show_task():
     task = st.session_state["edit_task"]
     title = st.text_input("Title", value=task.get("title"))
     extended_props = task["extendedProps"]
@@ -57,16 +52,38 @@ def show_task(task_modal: Modal):
     description = st.text_area("Description", value=extended_props.get("description"))
     priority = st.selectbox(
         "Priority",
-        ["low", "medium", "high"],
+        ["Low", "Medium", "High"],
         index=["low", "medium", "high"].index(extended_props.get("priority")),
     )
     status = st.selectbox(
         "Status",
-        ["pending", "completed"],
+        ["Pending", "Completed"],
         index=["pending", "completed"].index(extended_props.get("status")),
     )
 
-    pinned = st.checkbox("Pinned", value=extended_props.get("pinned"))
+    checkboxes = st.columns([1, 1, 1])
+    with checkboxes[0]:
+        repetitive_status = st.checkbox(
+            "Repetitive task", value=extended_props.get("repetitive")
+        )
+    with checkboxes[1]:
+        pinned = st.checkbox("Pinned", value=extended_props.get("pinned"))
+
+    if repetitive_status:
+        is_recurring = (
+            st.selectbox(
+                "Repetitive Type",
+                ["Daily", "Weekly", "Monthly"],
+                index=["daily", "weekly", "monthly"].index(
+                    extended_props.get("repetitive")
+                    if extended_props.get("repetitive")
+                    else "daily"
+                ),
+            ),
+        )
+        repeat_until = st.date_input(
+            "Repeat until", value=extended_props.get("repeat_until")
+        )
 
     deadline = st.date_input("Deadline", value=extended_props.get("deadline"))
 
@@ -80,6 +97,9 @@ def show_task(task_modal: Modal):
                 "pinned": pinned,
                 "deadline": deadline,
             }
+            payload = {"task_in": task}
+            if repetitive_status:
+                ...
             st.session_state["user_tasks"].append(task)
             print("\nAfter adding task:", st.session_state["user_tasks"], "\n")
             st.success("Task added successfully.")
@@ -95,9 +115,9 @@ def show_task(task_modal: Modal):
                     break
             st.success("Task updated successfully.")
         time.sleep(2)
-        close_modal(task_modal)
+        close_task()
     if st.button("Cancel"):
-        close_modal(task_modal)
+        close_task()
 
 
 events = []
@@ -122,6 +142,8 @@ for task in upcoming_tasks:
                 "status": task.get("status"),
                 "pinned": task.get("pinned"),
                 "deadline": deadline,
+                "repetitive": task.get("repetitive"),
+                "repeat_until": task.get("repeat_until"),
             },
         }
     )
@@ -151,15 +173,12 @@ state = calendar(
 )
 
 if state.get("callback") == "eventClick":
-    print("Event clicked")
     st.session_state["edit_task"] = state["eventClick"]["event"]
-    print(st.session_state["edit_task"])
-    st.session_state["edit_task_modal_open"] = True
-    task_modal.open()
+    show_task()
+
 
 if state.get("callback") == "dateClick":
     print("Date clicked")
-    st.session_state["edit_task_modal_open"] = True
     date = state["dateClick"]["date"]
     st.session_state["edit_task"] = {
         "title": "",
@@ -173,7 +192,7 @@ if state.get("callback") == "dateClick":
         },
     }
     print(st.session_state["edit_task"])
-    task_modal.open()
+    show_task()
 
 if state.get("callback") == "eventDrop":
     event = state["eventDrop"]["event"]
@@ -184,9 +203,3 @@ if state.get("callback") == "eventDrop":
         if str(task["id"]) == task_id:
             task["deadline"] = task_deadline
             break
-
-
-if st.session_state.get("edit_task_modal_open"):
-    if task_modal.is_open():
-        with task_modal.container():
-            show_task(task_modal)
