@@ -48,41 +48,35 @@ CSS = """
     font-weight: bold;
 }
 
-.iconBar{
-    display: flex;
-    gap: 10px;
+.taskContainer .iconBar{
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s;
     position: absolute;
     top: 10px;
     right: 10px;
 }
 
+.taskContainer:hover .iconBar{
+    display: flex;
+    gap: 6px;
+    opacity: 1;
+}
+
 .icon-btn {
-    width: 26px;
-    height: 26px;
-    color: #f2f2f2;
-    font-size: 16px;
+    border: none;
+    background-color: #333;
+    margin: 2px;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    color: #f1f1f1;
+    transition: background 0.2s;
+    font-size: 1.5em;
 }
 
-.icon-btn:hover {
-    background-color: #e0e0e0;
-    color: #222;
+.icon-btn:hover { 
+    box-shadow: 0 2px 8px #0001
 }
 
-.icon-btn:active {
-    transform: scale(0.96);
-}
-
-.edit::before {
-    content: "✎";
-}
-.delete::before {
-    content: "🗑";
-}
-.done::before {
-    content: "✔";
-}
 """
 
 
