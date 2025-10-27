@@ -1,7 +1,7 @@
 import streamlit as st
 
 from frontend.styles.task_css import inject_css
-from frontend.task_util import display_tasks
+from frontend.utils.task_util import display_tasks
 
 inject_css()
 
