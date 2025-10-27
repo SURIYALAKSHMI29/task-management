@@ -4,6 +4,10 @@ from datetime import date, datetime, timedelta
 import requests
 import streamlit as st
 from pydantic import EmailStr
+from styles.task_css import inject_css
+from utils.add_task import show_task
+
+inject_css()
 
 
 @st.cache_data(ttl=60)
@@ -18,7 +22,7 @@ def get_user_tasks():
         st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=60)
 def get_user_history(user_email: EmailStr):
     payload = {"email": user_email}
     # print("Payload", payload)
@@ -58,7 +62,6 @@ def sort_tasks(tasks, priority):
 
 
 def categorize_tasks(user_tasks, user_task_history):
-    print("entered categorize task function")
     today = date.today()
     nearest_sunday = date.today() + timedelta(days=(6 - today.weekday()) % 6)
     nearest_monday = date.today() - timedelta(days=today.weekday())
@@ -72,7 +75,12 @@ def categorize_tasks(user_tasks, user_task_history):
 
     for task in user_tasks:
         status = task.get("status")
-        deadline = task.get("deadline")
+        deadline_str = task.get("deadline")
+        deadline = (
+            datetime.strptime(deadline_str, "%Y-%m-%d").date()
+            if type(deadline_str) == str
+            else deadline_str
+        )
         pinned = task.get("pinned")
         repetitive_type = task.get("repetitive_type")
         repeat_until_str = task.get("repeat_until")
@@ -95,6 +103,7 @@ def categorize_tasks(user_tasks, user_task_history):
                     task["end"] = today
                     today_tasks.append(task)
                     weekly_tasks.append(task)
+                    upcoming_tasks.append(task)
 
                 elif repetitive_type == "weekly":
                     task["deadline"] = nearest_sunday
@@ -126,7 +135,7 @@ def categorize_tasks(user_tasks, user_task_history):
                     task["start"] = today
                     task["end"] = today
                     today_tasks.append(task)
-                else:
+                elif deadline >= today:
                     task["start"] = deadline
                     task["end"] = deadline
                     upcoming_tasks.append(task)
@@ -149,37 +158,148 @@ def categorize_tasks(user_tasks, user_task_history):
     st.session_state.upcoming_tasks = upcoming_tasks
 
 
-def display_task(task, completed, icon):
+st.markdown(
+    """
+    <style>
+        div[data-testid="stHorizontalBlock"] {
+            padding: 20px;
+            margin-bottom: 10px;
+            background-color: #222;
+            border-radius: 5px;
+        }
+
+        div[data-testid="stHorizontalBlock"]:hover {
+            background-color: #333;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            background-color: #333;
+        }
+
+        div[data-testid="stHorizontalBlock"]:hover > div:nth-child(2) {
+            opacity: 1;
+            visibility: visible;
+            background-color: #333;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def edit_task(task):
+    st.session_state["edit_task"] = task
+    show_task()
+
+
+def complete_task(task):
+    print(task["id"], "completed")
+    backend_url = st.secrets["backend"]["task_url"]
+    header = {"Authorization": f"Bearer {st.session_state.access_token}"}
+    response = requests.patch(
+        f"{backend_url}/complete-task/{task.get('id')}", headers=header
+    )
+
+    if response.status_code == 200:
+        updated_task = response.json()
+        for t in st.session_state.user_tasks:
+            if t["id"] == task["id"]:
+                t["completed_at"] = date.today()
+                t["status"] = "completed"
+                break
+    else:
+        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
+
+
+def delete_task(task):
+    backend_url = st.secrets["backend"]["task_url"]
+    header = {"Authorization": f"Bearer {st.session_state.access_token}"}
+    response = requests.delete(
+        f"{backend_url}/delete-task/{task.get('id')}", headers=header
+    )
+
+    if response.status_code == 200:
+        st.success("Task deleted successfully!")
+    else:
+        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
+
+
+def display_task(task, completed, icon, section_name):
     deadline = task.get("deadline")
     # print(type(deadline), deadline, "condition status", (deadline is None))
     if not deadline:
         # print(task.get("start"), task.get("end"), task)
         deadline = f"{task.get('start')} - {task.get('end')}"
 
-    st.markdown(
-        f"""
-        <div class="taskContainer">
-            <span class="taskIcon">{icon if icon else ''}</span>
-            <span class="completedDate">{task.get('completed_at') if completed else ''}</span>
-            <div class="iconBar">
-                <button class="icon-btn edit" title="Edit"></button>
-                <button class="icon-btn delete" title="Delete"></button>
-                <button class="icon-btn done" title="Done"></button>
+    cols = st.columns([10, 1])
+
+    with cols[0]:
+        st.markdown(
+            f"""
+            <div class="taskContainer">
+                <span class="taskIcon">{icon if icon else ''}</span>
+                <span class="completedDate">{task.get('completed_at') if completed else ''}</span>
+                <div class="taskTitle {"icon" if icon else ""}">{task.get('title')}</div>
+                <div class="taskDescription">{task['description']}</div>
+                <div class="taskInfo">
+                    <div class="taskDeadline">{deadline}</div>
+                    <div class="taskPriority">{task['priority'].capitalize()}</div>
+                    <div class="taskRepetitiveType">{task['repetitive_type'] if task['repetitive_type'] else ""}</div>
+                </div>
             </div>
-            <div class="taskTitle {"icon" if icon else ""}">{task.get('title')}</div>
-            <div class="taskDescription">{task['description']}</div>
-            <div class="taskInfo">
-                <div class="taskDeadline">{deadline}</div>
-                <div class="taskPriority">{task['priority'].capitalize()}</div>
-                <div class="taskRepetitiveType">{task['repetitive_type'] if task['repetitive_type'] else ""}</div>
-            </div>
-        </div>
 
-    """,
-        unsafe_allow_html=True,
-    )
+        """,
+            unsafe_allow_html=True,
+        )
+
+    with cols[1]:
+        if not completed:
+            buttons = st.columns([1, 1, 1])
+            unique_key = f"{section_name}-{task['id']}"
+            with buttons[0]:
+                task = {
+                    "id": task.get("id"),
+                    "title": task.get("title"),
+                    "start": task.get("start"),
+                    "end": task.get("end"),
+                    "extendedProps": {
+                        "description": task.get("description"),
+                        "priority": task.get("priority"),
+                        "status": task.get("status"),
+                        "pinned": task.get("pinned"),
+                        "repetitive": task.get("repetitive"),
+                        "repetitive_type": task.get("repetitive_type"),
+                        "repeat_until": task.get("repeat_until"),
+                        "deadline": task.get("deadline"),
+                    },
+                }
+                st.button(
+                    "✎",
+                    key=f"edit-{unique_key}-{task.get('start')}",
+                    on_click=edit_task,
+                    args=[task],
+                )
+            with buttons[1]:
+                st.button(
+                    "✔",
+                    key=f"done-{unique_key}-{task.get('start')}",
+                    on_click=complete_task,
+                    args=[task],
+                )
+            with buttons[2]:
+                st.button(
+                    "🗑",
+                    key=f"delete-{unique_key}-{task.get('start')}",
+                    on_click=delete_task,
+                    args=[task],
+                )
 
 
-def display_tasks(tasks, completed=False, icon=None):
+def display_tasks(tasks, completed=False, icon=None, section_name=""):
     for task in tasks:
-        display_task(task, completed, icon)
+        display_task(task, completed, icon, section_name)
