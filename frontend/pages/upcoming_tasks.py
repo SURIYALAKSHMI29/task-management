@@ -111,8 +111,6 @@ state = calendar(
 
 if state.get("callback") == "eventClick":
     st.session_state["edit_task"] = state["eventClick"]["event"]
-    # st.session_state.show_task = True
-    # show_task()
 
 
 if state.get("callback") == "dateClick":
@@ -129,7 +127,6 @@ if state.get("callback") == "dateClick":
             "pinned": False,
         },
     }
-    # st.session_state.show_task = True
     print(st.session_state["edit_task"])
 
 
