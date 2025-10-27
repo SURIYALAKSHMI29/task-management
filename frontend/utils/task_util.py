@@ -58,6 +58,7 @@ def sort_tasks(tasks, priority):
 
 
 def categorize_tasks(user_tasks, user_task_history):
+    print("entered categorize task function")
     today = date.today()
     nearest_sunday = date.today() + timedelta(days=(6 - today.weekday()) % 6)
     nearest_monday = date.today() - timedelta(days=today.weekday())
@@ -160,7 +161,7 @@ def display_task(task, completed, icon):
         <div class="taskContainer">
             <span class="taskIcon">{icon if icon else ''}</span>
             <span class="completedDate">{task.get('completed_at') if completed else ''}</span>
-            <div class="icon-bar">
+            <div class="iconBar">
                 <button class="icon-btn edit" title="Edit"></button>
                 <button class="icon-btn delete" title="Delete"></button>
                 <button class="icon-btn done" title="Done"></button>
