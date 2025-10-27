@@ -7,7 +7,12 @@ from pages.login import login_page
 from pages.register import register_page
 from streamlit_modal import Modal
 from styles.task_css import inject_css
-from task_util import categorize_tasks, display_tasks, get_user_history, get_user_tasks
+from utils.task_util import (
+    categorize_tasks,
+    display_tasks,
+    get_user_history,
+    get_user_tasks,
+)
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if PROJECT_ROOT not in sys.path:
