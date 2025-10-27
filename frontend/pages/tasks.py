@@ -1,8 +1,8 @@
 from datetime import date, datetime, timedelta
 
 import streamlit as st
+from styles.task_css import inject_css
 
-from frontend.styles.task_css import inject_css
 from frontend.utils.task_util import display_tasks
 
 inject_css()
@@ -17,7 +17,7 @@ today_tasks = st.session_state.today_tasks
 nearest_sunday = date.today() + timedelta(days=(6 - date.today().weekday()) % 6)
 weekly_tasks = st.session_state.weekly_tasks
 upcoming_tasks = st.session_state.upcoming_tasks
-user_tasks = today_tasks + weekly_tasks + overdue_tasks + upcoming_tasks
+user_tasks = overdue_tasks + upcoming_tasks
 
 priority = {"high": 1, "medium": 2, "low": 3}
 user_tasks.sort(
@@ -89,10 +89,10 @@ with st.container():
     tabs = st.tabs(["Today", "This Week", "Overdue", "All Tasks"])
 
     with tabs[0]:
-        display_tasks(today_tasks)
+        display_tasks(today_tasks, section_name="today")
     with tabs[1]:
-        display_tasks(weekly_tasks)
+        display_tasks(weekly_tasks, section_name="weekly")
     with tabs[2]:
-        display_tasks(overdue_tasks)
+        display_tasks(overdue_tasks, section_name="overdue")
     with tabs[3]:
-        display_tasks(user_tasks)
+        display_tasks(user_tasks, section_name="user_tasks")
