@@ -151,8 +151,8 @@ def get_task(
 @router.post("/add-task", response_model=TaskOut)
 def add_task(
     task_in: TaskIn,
-    repetitive_type: Optional[RecurrenceType] = None,
-    repeat_until: Optional[date] = None,
+    repetitive_type: Optional[RecurrenceType] = Body(None),
+    repeat_until: Optional[date] = Body(None),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -161,6 +161,7 @@ def add_task(
 
     task_data = task_in.model_dump(exclude_unset=True)
     task_data["user_id"] = user.id
+    print(task_data)
 
     task_data["pinned"] = task_data.get("pinned", False) and check_pinned_tasks(
         user.id, session
@@ -181,8 +182,8 @@ def add_task(
 def update_task(
     id: int,
     task_in: TaskIn,
-    repetitive_type: Optional[RecurrenceType] = None,
-    repeat_until: Optional[date] = None,
+    repetitive_type: Optional[RecurrenceType] = Body(None),
+    repeat_until: Optional[date] = Body(None),
     remove_recurring: Optional[bool] = False,
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
