@@ -8,12 +8,6 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
 initialize_sessions()
 
-# def open_login_modal():
-#     st.session_state.active_modal = "login-modal"
-# def open_register_modal():
-#     st.session_state.active_modal = "register-modal"
-
-
 home_page = st.Page("pages/home.py", title="GoGetter", icon=":material/home:")
 tasks_page = st.Page("pages/tasks.py", title="Tasks", icon=":material/hourglass_top:")
 profile_page = st.Page(
@@ -33,10 +27,4 @@ pg = st.navigation(
     }
 )
 
-print("modal state:", st.session_state.active_modal)
-print("logged_in state:", st.session_state.logged_in)
-print("user_email:", st.session_state.user_email)
-print("pending_registration:", st.session_state.pending_registration)
-
-print()
 pg.run()
