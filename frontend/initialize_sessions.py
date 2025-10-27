@@ -1,3 +1,5 @@
+import uuid
+
 import streamlit as st
 
 
@@ -46,3 +48,9 @@ def initialize_sessions():
 
     if "upcoming_tasks" not in st.session_state:
         st.session_state.upcoming_tasks = []
+
+    if "edit_task" not in st.session_state:
+        st.session_state.edit_task = None
+
+    if "calendar_key" not in st.session_state:
+        st.session_state["calendar_key"] = str(uuid.uuid4())
