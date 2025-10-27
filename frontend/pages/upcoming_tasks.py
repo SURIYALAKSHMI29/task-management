@@ -1,9 +1,11 @@
 import time
 from datetime import date, datetime
 
+import requests
 import streamlit as st
-from frontend.styles.task_css import inject_css
 from streamlit_calendar import calendar
+from styles.task_css import inject_css
+from utils.add_task import show_task
 
 inject_css()
 
@@ -31,93 +33,26 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-def close_task():
-    st.session_state["edit_task"] = None
-    st.rerun()
+custom_css = """
+        .fc-event-past {
+            opacity: 0.8;
+        }
+        .fc-event-time {
+            display: none;
+        }
+        .fc-event-title {
+            font-weight: 700;
+        }
+        .fc-toolbar-title {
+            font-size: 2rem;
+        }
+    """
 
 
 def get_isoformat_date(inp_date):
     if type(inp_date) != date:
         inp_date = datetime.strptime(inp_date, "%Y-%m-%d").date()
     return inp_date.isoformat()
-
-
-@st.dialog("Task Details")
-def show_task():
-    task = st.session_state["edit_task"]
-    title = st.text_input("Title", value=task.get("title"))
-    extended_props = task["extendedProps"]
-
-    description = st.text_area("Description", value=extended_props.get("description"))
-    priority = st.selectbox(
-        "Priority",
-        ["Low", "Medium", "High"],
-        index=["low", "medium", "high"].index(extended_props.get("priority")),
-    )
-    status = st.selectbox(
-        "Status",
-        ["Pending", "Completed"],
-        index=["pending", "completed"].index(extended_props.get("status")),
-    )
-
-    checkboxes = st.columns([1, 1, 1])
-    with checkboxes[0]:
-        repetitive_status = st.checkbox(
-            "Repetitive task", value=extended_props.get("repetitive")
-        )
-    with checkboxes[1]:
-        pinned = st.checkbox("Pinned", value=extended_props.get("pinned"))
-
-    if repetitive_status:
-        is_recurring = (
-            st.selectbox(
-                "Repetitive Type",
-                ["Daily", "Weekly", "Monthly"],
-                index=["daily", "weekly", "monthly"].index(
-                    extended_props.get("repetitive")
-                    if extended_props.get("repetitive")
-                    else "daily"
-                ),
-            ),
-        )
-        repeat_until = st.date_input(
-            "Repeat until", value=extended_props.get("repeat_until")
-        )
-
-    deadline = st.date_input("Deadline", value=extended_props.get("deadline"))
-
-    if st.button("Save Changes"):
-        if st.session_state["edit_task"].get("id") == None:
-            task = {
-                "title": title,
-                "description": description,
-                "priority": priority,
-                "status": status,
-                "pinned": pinned,
-                "deadline": deadline,
-            }
-            payload = {"task_in": task}
-            if repetitive_status:
-                ...
-            st.session_state["user_tasks"].append(task)
-            print("\nAfter adding task:", st.session_state["user_tasks"], "\n")
-            st.success("Task added successfully.")
-        else:
-            for task in st.session_state["user_tasks"]:
-                if str(task["id"]) == st.session_state["edit_task"].get("id"):
-                    task["title"] = title
-                    task["description"] = description
-                    task["priority"] = priority
-                    task["status"] = status
-                    task["pinned"] = pinned
-                    task["deadline"] = deadline
-                    break
-            st.success("Task updated successfully.")
-        time.sleep(2)
-        close_task()
-    if st.button("Cancel"):
-        close_task()
 
 
 events = []
@@ -169,12 +104,15 @@ calendar_options = {
 state = calendar(
     events=events,
     options=calendar_options,
-    key="tasks_calendar",
+    key=st.session_state["calendar_key"],
+    custom_css=custom_css,
 )
+
 
 if state.get("callback") == "eventClick":
     st.session_state["edit_task"] = state["eventClick"]["event"]
-    show_task()
+    # st.session_state.show_task = True
+    # show_task()
 
 
 if state.get("callback") == "dateClick":
@@ -191,8 +129,9 @@ if state.get("callback") == "dateClick":
             "pinned": False,
         },
     }
+    # st.session_state.show_task = True
     print(st.session_state["edit_task"])
-    show_task()
+
 
 if state.get("callback") == "eventDrop":
     event = state["eventDrop"]["event"]
@@ -203,3 +142,6 @@ if state.get("callback") == "eventDrop":
         if str(task["id"]) == task_id:
             task["deadline"] = task_deadline
             break
+
+if st.session_state["edit_task"]:
+    show_task()
