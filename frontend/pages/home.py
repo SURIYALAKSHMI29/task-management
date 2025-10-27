@@ -124,14 +124,14 @@ else:
         with task_columns[0]:
             if len(st.session_state.today_tasks) >= 1:
                 st.markdown("### Today's Tasks ")
-                display_tasks(today_tasks)
+                display_tasks(today_tasks, section_name="today")
 
             else:
                 st.info("No tasks scheduled for today! ")
         with task_columns[1]:
             if len(pinned_tasks) >= 1:
                 st.markdown("### Pinned Tasks ")
-                display_tasks(pinned_tasks, icon="&#128204;")
+                display_tasks(pinned_tasks, icon="&#128204;", section_name="pinned")
             else:
                 st.info("No pinned tasks found! ")
 
