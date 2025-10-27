@@ -78,10 +78,10 @@ def scheduled_task_updates():
         )
 
         tasks = session.exec(stmt).all()
-        print(tasks)
+        # print(tasks)
         for task in tasks:
-            print("\nUpdating for ", task)
-            print(task.recurring_task, task.title)
+            # print("\nUpdating for ", task)
+            # print(task.recurring_task, task.title)
             updateTaskHistory(task, TaskStatus.PENDING, session)
 
 
@@ -120,6 +120,7 @@ def updateTaskHistory(task: Task, status: TaskStatus, session: Session):
         )
     ).first()
 
+    # print(task_history)
     if task_history:
         task_history.completed_at = today if status == TaskStatus.COMPLETED else None
         session.commit()
@@ -161,7 +162,7 @@ def add_task(
 
     task_data = task_in.model_dump(exclude_unset=True)
     task_data["user_id"] = user.id
-    print(task_data)
+    # print(task_data)
 
     task_data["pinned"] = task_data.get("pinned", False) and check_pinned_tasks(
         user.id, session
@@ -203,7 +204,7 @@ def update_task(
         if task.recurring_task and key == "status" and value == TaskStatus.COMPLETED:
             updateTaskHistory(task, value, session)
             continue
-        print(key, value)
+        # print(key, value)
         setattr(task, key, value)
 
     if remove_recurring:
@@ -228,6 +229,25 @@ def update_task(
 
     task = add_to_db(task, session)
     return bind_task_details(task)
+
+
+@router.patch("/complete-task/{id}")
+def complete_task(
+    id: int,
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    print(id)
+    task = get_task_by_id(id, session)
+    if verify_current_user(task.user_id, current_user["user_email"], session):
+        if task.recurring_task:
+            updateTaskHistory(task, TaskStatus.COMPLETED, session)
+        else:
+            task.status = TaskStatus.COMPLETED
+            session.commit()
+            session.refresh(task)
+        return bind_task_details(task)
+    return
 
 
 @router.delete("/delete-task/{id}")
@@ -263,7 +283,7 @@ def get_history(
     session: Session = Depends(get_session),
 ):
     user_id = get_user_by_email(email, session).id
-    print(user_id)
+    # print(user_id)
     if verify_current_user(user_id, current_user["user_email"], session):
         tasks = session.exec(
             select(Task, TaskHistory).join(TaskHistory).where(Task.user_id == user_id)
