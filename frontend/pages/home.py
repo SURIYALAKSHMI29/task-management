@@ -7,12 +7,8 @@ from pages.login import login_page
 from pages.register import register_page
 from streamlit_modal import Modal
 from styles.task_css import inject_css
-from utils.task_util import (
-    categorize_tasks,
-    display_tasks,
-    get_user_history,
-    get_user_tasks,
-)
+from utils.task_card import display_tasks
+from utils.task_util import categorize_tasks, get_user_history, get_user_tasks
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if PROJECT_ROOT not in sys.path:
@@ -124,14 +120,22 @@ else:
         with task_columns[0]:
             if len(st.session_state.today_tasks) >= 1:
                 st.markdown("### Today's Tasks ")
-                display_tasks(today_tasks, section_name="today")
+                display_tasks(
+                    today_tasks, section_name="today", task_width=7, button_width=1
+                )
 
             else:
                 st.info("No tasks scheduled for today! ")
         with task_columns[1]:
             if len(pinned_tasks) >= 1:
                 st.markdown("### Pinned Tasks ")
-                display_tasks(pinned_tasks, icon="&#128204;", section_name="pinned")
+                display_tasks(
+                    pinned_tasks,
+                    icon="&#128204;",
+                    section_name="pinned",
+                    task_width=3,
+                    button_width=1,
+                )
             else:
                 st.info("No pinned tasks found! ")
 
