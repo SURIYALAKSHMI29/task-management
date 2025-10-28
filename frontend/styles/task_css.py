@@ -2,19 +2,6 @@ import streamlit as st
 
 CSS = """
 
-.taskContainer{
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #222;
-    border-radius: 5px;
-}
-
-.taskContainer:hover{
-    background-color: #333;
-    transition: 0.3s;
-    cursor: pointer;
-}
-
 .taskIcon{
     position: absolute;
     top: 10px;
@@ -37,14 +24,12 @@ CSS = """
     align-items: left;
     font-size: 1em;
     color: #999;
+    font: sans-serif;
+    margin-bottom: 10px;
 }
 
 .completedDate{
-    position: absolute;
-    right: 10px;
-    top: 10px;
     font-size: 1em;
-    color: green;
     font-weight: bold;
 }
 
