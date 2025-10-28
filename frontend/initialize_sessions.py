@@ -54,3 +54,6 @@ def initialize_sessions():
 
     if "calendar_key" not in st.session_state:
         st.session_state["calendar_key"] = str(uuid.uuid4())
+
+    if "refresh_user_tasks" not in st.session_state:
+        st.session_state.refresh_user_tasks = False
