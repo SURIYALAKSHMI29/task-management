@@ -88,7 +88,6 @@ def show_task():
                     f"Failed to add task: {response.status_code} - {response.text}"
                 )
             else:
-                st.session_state["user_tasks"].append(response.json())
                 st.success("Task added successfully.")
         else:
             response = requests.patch(
@@ -101,6 +100,7 @@ def show_task():
                     f"Failed to update task: {response.status_code} - {response.text}"
                 )
             st.success("Task updated successfully.")
+        st.session_state.refresh_user_tasks = True
         time.sleep(2)
         close_task()
 
