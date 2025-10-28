@@ -70,5 +70,7 @@ def register_page(modal: Modal):
                 st.session_state.logged_in = True
                 modal.close()
                 st.success("Registered successfully!")
+            elif response.status_code == 409:
+                st.error(response.json()["detail"])
             else:
                 st.error("Unable to register the user right now, Try again later")
