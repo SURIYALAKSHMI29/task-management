@@ -192,6 +192,8 @@ def add_task(
         add_to_db(recurring_task, session)
         session.refresh(task)  # updates the in-place relationships
 
+    updateTaskHistory(task, TaskStatus.PENDING, session)
+
     return bind_task_details(task)
 
 
