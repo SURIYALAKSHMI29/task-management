@@ -1,45 +1,5 @@
-from datetime import date
-
-import requests
 import streamlit as st
-from utils.add_task import show_task
-
-
-def edit_task(task):
-    st.session_state["edit_task"] = task
-    show_task()
-
-
-def complete_task(task):
-    # print(task["id"], "completed")
-    backend_url = st.secrets["backend"]["task_url"]
-    header = {"Authorization": f"Bearer {st.session_state.access_token}"}
-    response = requests.patch(
-        f"{backend_url}/complete-task/{task.get('id')}", headers=header
-    )
-
-    if response.status_code == 200:
-        updated_task = response.json()
-        for t in st.session_state.user_tasks:
-            if t["id"] == task["id"]:
-                t["completed_at"] = date.today()
-                t["status"] = "completed"
-                break
-    else:
-        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
-
-
-def delete_task(task):
-    backend_url = st.secrets["backend"]["task_url"]
-    header = {"Authorization": f"Bearer {st.session_state.access_token}"}
-    response = requests.delete(
-        f"{backend_url}/delete-task/{task.get('id')}", headers=header
-    )
-
-    if response.status_code == 200:
-        st.success("Task deleted successfully!")
-    else:
-        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
+from utils.task_util import complete_task, delete_task, edit_task
 
 
 def display_task(task, completed, icon, section_name, task_width, button_width):
@@ -125,7 +85,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                     f"""
                     <div class="completedDate">
                         {task.get('completed_at')}
-                        <span style="font-size:1.2em;">✓</span>
+                        <span style="font-size:1.2em; color: darkgreen">✓</span>
                     </div>""",
                     unsafe_allow_html=True,
                 )
