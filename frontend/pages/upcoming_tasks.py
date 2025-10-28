@@ -4,15 +4,17 @@ import streamlit as st
 from streamlit_calendar import calendar
 from styles.task_css import inject_css
 from utils.add_task import show_task
+from utils.fetch_tasks import load_and_categorize_tasks
 
 inject_css()
 
 st.header("Upcoming Tasks")
 
-if "edit_task_modal_open" not in st.session_state:
-    st.session_state.edit_task_modal_open = False
-
 upcoming_tasks = st.session_state.upcoming_tasks
+
+if st.session_state.refresh_user_tasks:
+    load_and_categorize_tasks()
+    st.session_state.refresh_user_tasks = False
 
 st.markdown(
     """
@@ -116,12 +118,12 @@ if state.get("callback") == "dateClick":
     date = state["dateClick"]["date"]
     st.session_state["edit_task"] = {
         "title": "",
-        "deadline": date,
         "id": None,
         "extendedProps": {
             "description": "",
             "priority": "medium",
             "status": "pending",
+            "deadline": date,
             "pinned": False,
         },
     }

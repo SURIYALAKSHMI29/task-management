@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta
 
 import streamlit as st
 from styles.task_css import inject_css
+from utils.fetch_tasks import load_and_categorize_tasks
 from utils.task_card import display_tasks
 
 inject_css()
@@ -9,6 +10,9 @@ inject_css()
 st.header("Tasks")
 
 # overdue_tasks = st.session_state.user_tasks.filter(lambda task: task["status"] == "pending" and datetime.fromisoformat(task.get("deadline")).date() < datetime.now())
+if st.session_state.refresh_user_tasks:
+    load_and_categorize_tasks()
+    st.session_state.refresh_user_tasks = False
 
 overdue_tasks = st.session_state.overdue_tasks
 today_tasks = st.session_state.today_tasks
