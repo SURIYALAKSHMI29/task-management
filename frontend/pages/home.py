@@ -7,8 +7,8 @@ from pages.login import login_page
 from pages.register import register_page
 from streamlit_modal import Modal
 from styles.task_css import inject_css
+from utils.fetch_tasks import load_and_categorize_tasks
 from utils.task_card import display_tasks
-from utils.task_util import categorize_tasks, get_user_history, get_user_tasks
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if PROJECT_ROOT not in sys.path:
@@ -107,11 +107,7 @@ else:
         st.button("Log out", on_click=logout)
 
     st.write(f"Have an energetic day {st.session_state.user["name"].capitalize()}!")
-    get_user_tasks()
-    get_user_history(st.session_state.user_email)
-    user_tasks = st.session_state.user_tasks
-    user_task_history = st.session_state.user_task_history
-    categorize_tasks(user_tasks, user_task_history)
+    load_and_categorize_tasks()
     pinned_tasks = st.session_state.pinned_tasks
     today_tasks = st.session_state.today_tasks
 
