@@ -2,8 +2,7 @@ from datetime import date, datetime, timedelta
 
 import streamlit as st
 from styles.task_css import inject_css
-
-from frontend.utils.task_util import display_tasks
+from utils.task_card import display_tasks
 
 inject_css()
 
@@ -62,17 +61,28 @@ def filter_tasks(prop, value):
 toolbar_cols = st.columns([3, 2, 1, 1])
 
 with toolbar_cols[0]:
-    st.text_input("", key="search_task", placeholder="Search task")
+    st.text_input(
+        "Search",
+        key="search_task",
+        placeholder="Search task",
+        label_visibility="collapsed",
+    )
 
 with toolbar_cols[2]:
     st.selectbox(
-        "",
+        "Filter",
         ["Repetivity", "Daily", "Weekly", "Monthly"],
         key="repetitive_type",
+        label_visibility="collapsed",
     )
 
 with toolbar_cols[3]:
-    st.selectbox("", ["Priority", "High", "Medium", "Low"], key="priority")
+    st.selectbox(
+        "Filter",
+        ["Priority", "High", "Medium", "Low"],
+        key="priority",
+        label_visibility="collapsed",
+    )
 
 st.write("")
 
