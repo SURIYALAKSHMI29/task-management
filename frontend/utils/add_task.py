@@ -61,51 +61,45 @@ def show_task():
     deadline = st.date_input("Deadline", value=extended_props.get("deadline"))
 
     if st.button("Save Changes"):
+        task = {
+            "title": title,
+            "description": description,
+            "priority": priority,
+            "status": status,
+            "pinned": pinned,
+            "deadline": str(deadline) if deadline else None,
+        }
+        payload = {"task_in": task}
+        if repetitive_status:
+            payload["repetitive_type"] = is_recurring
+            payload["repeat_until"] = str(repeat_until) if repeat_until else None
+
+        backend_url = st.secrets["backend"]["task_url"]
+        header = {"Authorization": f"Bearer {st.session_state.access_token}"}
+
         if st.session_state["edit_task"].get("id") == None:
-            task = {
-                "title": title,
-                "description": description,
-                "priority": priority,
-                "status": status,
-                "pinned": pinned,
-                "deadline": str(deadline) if deadline else None,
-            }
-            payload = {"task_in": task}
-            if repetitive_status:
-                payload["repetitive_type"] = is_recurring
-                payload["repeat_until"] = str(repeat_until) if repeat_until else None
-
-            # print("Payload: ", payload)
-
-            backend_url = st.secrets["backend"]["task_url"]
-            header = {"Authorization": f"Bearer {st.session_state.access_token}"}
             response = requests.post(
                 f"{backend_url}/add-task",
                 headers=header,
                 json=payload,
             )
-
             if response.status_code != 200:
                 st.error(
                     f"Failed to add task: {response.status_code} - {response.text}"
                 )
             else:
                 st.session_state["user_tasks"].append(response.json())
-                # print("\nAfter adding task:", st.session_state["user_tasks"], "\n")
                 st.success("Task added successfully.")
-            # print(response.status_code, response.json())
-            # st.session_state["user_tasks"].append(task)
-            # print("\nAfter adding task:", st.session_state["user_tasks"], "\n")
         else:
-            for task in st.session_state["user_tasks"]:
-                if str(task["id"]) == st.session_state["edit_task"].get("id"):
-                    task["title"] = title
-                    task["description"] = description
-                    task["priority"] = priority
-                    task["status"] = status
-                    task["pinned"] = pinned
-                    task["deadline"] = str(deadline) if deadline else None
-                    break
+            response = requests.patch(
+                f"{backend_url}/update-task/{st.session_state['edit_task'].get('id')}",
+                headers=header,
+                json=payload,
+            )
+            if response.status_code != 200:
+                st.error(
+                    f"Failed to update task: {response.status_code} - {response.text}"
+                )
             st.success("Task updated successfully.")
         time.sleep(2)
         close_task()
