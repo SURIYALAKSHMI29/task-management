@@ -186,7 +186,6 @@ def complete_task(task):
     if response.status_code == 200:
         st.cache_data.clear()
         st.session_state.refresh_user_tasks = True
-        st.success("Task completed successfully!")
     else:
         st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
 
