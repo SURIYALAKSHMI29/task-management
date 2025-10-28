@@ -4,9 +4,9 @@ from datetime import date, datetime, timedelta
 import requests
 import streamlit as st
 from pydantic import EmailStr
+from utils.add_task import show_task
 
 
-@st.cache_data(ttl=60)
 def get_user_tasks():
     backend_url = st.secrets["backend"]["user_url"]
     header = {"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -14,12 +14,11 @@ def get_user_tasks():
 
     if response.status_code == 200:
         st.session_state.user_tasks = response.json()
-        print("returning user_tasks: ", st.session_state.user_tasks)
+        # print("returning user_tasks: ", st.session_state.user_tasks)
     else:
         st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
 
 
-@st.cache_data(ttl=60)
 def get_user_history(user_email: EmailStr):
     payload = {"email": user_email}
     # print("Payload", payload)
@@ -47,7 +46,7 @@ def get_task_history(task_id):
 
     if response.status_code == 200:
         st.session_state.user_task_history = response.json()
-        print("returning user_task_history: ", st.session_state.user_task_history)
+        # print("returning user_task_history: ", st.session_state.user_task_history)
     else:
         st.error(
             f"Failed to fetch task history: {response.status_code} - {response.text}"
@@ -59,6 +58,8 @@ def sort_tasks(tasks, priority):
 
 
 def check_task_status(task_id, start, end):
+    start = str(start)
+    end = str(end)
     for task in st.session_state.completed_tasks:
         if task["id"] == task_id and task["start"] == start and task["end"] == end:
             return False
@@ -134,7 +135,7 @@ def categorize_tasks(user_tasks, user_task_history):
                     weekly_tasks.append(task)
                     upcoming_tasks.append(task)
 
-                else:
+                elif repetitive_type == "monthly":
                     last_day = calendar.monthrange(today.year, today.month)[1]
                     last_date = date(today.year, today.month, last_day)
                     last_monday = last_date - timedelta((last_date.weekday() - 0) % 7)
@@ -159,9 +160,45 @@ def categorize_tasks(user_tasks, user_task_history):
                 if deadline == today:
                     today_tasks.append(task)
                 elif deadline >= today:
+                    if deadline <= nearest_sunday:
+                        weekly_tasks.append(task)
                     upcoming_tasks.append(task)
 
     st.session_state.today_tasks = sort_tasks(today_tasks, priority_order)
     st.session_state.pinned_tasks = sort_tasks(pinned_tasks, priority_order)
     st.session_state.weekly_tasks = sort_tasks(weekly_tasks, priority_order)
     st.session_state.upcoming_tasks = upcoming_tasks
+
+
+def edit_task(task):
+    st.session_state["edit_task"] = task
+    show_task()
+
+
+def complete_task(task):
+    # print(task["id"], "completed")
+    backend_url = st.secrets["backend"]["task_url"]
+    header = {"Authorization": f"Bearer {st.session_state.access_token}"}
+    response = requests.patch(
+        f"{backend_url}/complete-task/{task.get('id')}", headers=header
+    )
+
+    if response.status_code == 200:
+        st.cache_data.clear()
+        st.success("Task completed successfully!")
+    else:
+        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
+
+
+def delete_task(task):
+    backend_url = st.secrets["backend"]["task_url"]
+    header = {"Authorization": f"Bearer {st.session_state.access_token}"}
+    response = requests.delete(
+        f"{backend_url}/delete-task/{task.get('id')}", headers=header
+    )
+
+    if response.status_code == 200:
+        st.cache_data.clear()
+        st.success("Task deleted successfully!")
+    else:
+        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
