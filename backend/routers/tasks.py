@@ -89,27 +89,39 @@ def scheduled_task_updates():
 def updateTaskHistory(task: Task, status: TaskStatus, session: Session):
     if task.deadline is None and task.recurring_task is None:
         return
-    start = task.deadline
-    end = task.deadline
+    deadline = task.deadline
+    start = deadline
+    end = deadline
     today = date.today()
+
+    close_task = False
 
     # finding appropriate start and end dates
     if task.recurring_task is not None:
         recurring_task = session.get(RecurringTask, task.recurring_task.id)
-        if recurring_task.repetitive_type == RecurrenceType.WEEKLY:
+        repetitive_type = recurring_task.repetitive_type
+        repeat_until = recurring_task.repeat_until
+
+        if repetitive_type == RecurrenceType.WEEKLY:
             nearest_monday = date.today() - timedelta(days=today.weekday())
             start = nearest_monday
             nearest_sunday = date.today() + timedelta(
                 days=(6 - date.today().weekday()) % 7
             )
             end = nearest_sunday
-        elif recurring_task.repetitive_type == RecurrenceType.MONTHLY:
+        elif repetitive_type == RecurrenceType.MONTHLY:
             start = date(today.year, today.month, 1)
             _, num_days = calendar.monthrange(today.year, today.month)
             end = date(today.year, today.month, num_days)
-        elif recurring_task.repetitive_type == RecurrenceType.DAILY:
+        elif repetitive_type == RecurrenceType.DAILY:
             start = today
             end = today
+
+        if repeat_until and repeat_until <= end:
+            close_task = True
+            end = repeat_until
+    else:
+        close_task = True
 
     # find if task history is found with existing data
     task_history = session.exec(
@@ -133,6 +145,11 @@ def updateTaskHistory(task: Task, status: TaskStatus, session: Session):
             task_history = TaskHistory(task_id=task.id, start=start, end=end)
         add_to_db(task_history, session)
 
+    if close_task and status == TaskStatus.COMPLETED:
+        task.status = TaskStatus.COMPLETED
+    else:
+        task.status = TaskStatus.PENDING
+    session.commit()
     session.refresh(task)  # updates the in-place relationships
     return
 
@@ -201,7 +218,7 @@ def update_task(
             task.updated_at = date.today()
         if key == "status" and value:
             value = TaskStatus(value)
-        if task.recurring_task and key == "status" and value == TaskStatus.COMPLETED:
+        if key == "status":
             updateTaskHistory(task, value, session)
             continue
         # print(key, value)
