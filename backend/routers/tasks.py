@@ -133,17 +133,16 @@ def updateTaskHistory(task: Task, status: TaskStatus, session: Session):
     ).first()
 
     # print(task_history)
-    if task_history:
-        task_history.completed_at = today if status == TaskStatus.COMPLETED else None
-        session.commit()
-    else:
-        if status == TaskStatus.COMPLETED:
-            task_history = TaskHistory(
-                task_id=task.id, start=start, end=end, completed_at=today
-            )
-        else:
-            task_history = TaskHistory(task_id=task.id, start=start, end=end)
+    if not task_history:
+        task_history = TaskHistory(task_id=task.id, start=start, end=end)
         add_to_db(task_history, session)
+
+    task_history.completed_at = (
+        today
+        if task_history.completed_at is None and status == TaskStatus.COMPLETED
+        else task_history.completed_at
+    )
+    session.commit()
 
     if close_task and status == TaskStatus.COMPLETED:
         task.status = TaskStatus.COMPLETED
@@ -257,12 +256,8 @@ def complete_task(
     print(id)
     task = get_task_by_id(id, session)
     if verify_current_user(task.user_id, current_user["user_email"], session):
-        if task.recurring_task:
-            updateTaskHistory(task, TaskStatus.COMPLETED, session)
-        else:
-            task.status = TaskStatus.COMPLETED
-            session.commit()
-            session.refresh(task)
+        updateTaskHistory(task, TaskStatus.COMPLETED, session)
+        session.refresh(task)
         return bind_task_details(task)
     return
 
@@ -309,9 +304,9 @@ def get_history(
         for task, history in tasks:
             task_data = bind_task_details(task).model_dump()
             history_data = history.model_dump()
+            history_data.pop("id")
             task_history = {**task_data, **history_data}
             history_list.append(task_history)
-
         return history_list
 
     return []
