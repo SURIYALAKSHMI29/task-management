@@ -1,7 +1,5 @@
-import time
 from datetime import date, datetime
 
-import requests
 import streamlit as st
 from streamlit_calendar import calendar
 from styles.task_css import inject_css
