@@ -3,12 +3,23 @@ from datetime import date, datetime, timedelta
 import streamlit as st
 from pages.calendar_view import calendar_view
 from styles.task_css import inject_css
+from utils.add_task import show_task
 from utils.fetch_tasks import load_and_categorize_tasks
 from utils.task_card import display_tasks
 
 inject_css()
 
-st.header("Tasks")
+task_header = st.columns([1, 0.1])
+with task_header[0]:
+    st.markdown(
+        """
+        <h2 style="padding-bottom:20px;">Tasks</h2>
+        """,
+        unsafe_allow_html=True,
+    )
+with task_header[1]:
+    st.markdown(" ")
+    st.button("Add Task", on_click=show_task)
 
 # overdue_tasks = st.session_state.user_tasks.filter(lambda task: task["status"] == "pending" and datetime.fromisoformat(task.get("deadline")).date() < datetime.now())
 if st.session_state.refresh_user_tasks:
@@ -78,7 +89,7 @@ calendar_options = {
     "selectable": False,
 }
 
-toolbar_cols = st.columns([3, 2, 1, 1, 0.2])
+toolbar_cols = st.columns([3, 2, 0.2, 0.8, 0.8])
 
 with toolbar_cols[0]:
     st.text_input(
@@ -89,21 +100,6 @@ with toolbar_cols[0]:
     )
 
 with toolbar_cols[2]:
-    st.selectbox(
-        "Filter",
-        ["Repetivity", "Daily", "Weekly", "Monthly"],
-        key="repetitive_type",
-        label_visibility="collapsed",
-    )
-
-with toolbar_cols[3]:
-    st.selectbox(
-        "Filter",
-        ["Priority", "High", "Medium", "Low"],
-        key="priority",
-        label_visibility="collapsed",
-    )
-with toolbar_cols[4]:
     if st.session_state.list_view:
         st.button(
             "🗓️",
@@ -118,6 +114,22 @@ with toolbar_cols[4]:
             help="List View",
             on_click=change_task_view,
         )
+
+with toolbar_cols[3]:
+    st.selectbox(
+        "Filter",
+        ["Repetivity", "Daily", "Weekly", "Monthly"],
+        key="repetitive_type",
+        label_visibility="collapsed",
+    )
+
+with toolbar_cols[4]:
+    st.selectbox(
+        "Filter",
+        ["Priority", "High", "Medium", "Low"],
+        key="priority",
+        label_visibility="collapsed",
+    )
 
 st.write("")
 
