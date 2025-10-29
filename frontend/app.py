@@ -20,11 +20,6 @@ completed_tasks_page = st.Page(
     "pages/completed_tasks.py", title="Completed tasks", icon=":material/check_circle:"
 )
 
-pg = st.navigation(
-    {
-        "": [home_page, profile_page],
-        "Tasks": [tasks_page, upcoming_tasks_page, completed_tasks_page],
-    }
-)
+pg = st.navigation([home_page, tasks_page, upcoming_tasks_page, completed_tasks_page])
 
 pg.run()
