@@ -101,7 +101,8 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
 
             div[data-testid='stVerticalBlock']:has(div#task_container_inner):not(:has(div#task_container_outer)):hover{
                 background-color: #333;
-                scale: 1.01;
+                transform: translateX(8px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                 transition: 0.3s;
                 cursor: pointer;
             }
