@@ -2,28 +2,7 @@ import streamlit as st
 
 CSS = """
 body {
-    font-family: 'Arial', sans-serif;
-}
-
-.stTitle {
-    color: #1f2937;
-    font-size: 3rem;
-    font-weight: bold;
-    text-align: left;
-    margin-bottom: 0.5rem;
-}
-.stHeader {
-    color: #4b5563;
-    font-size: 1.2rem;
-    text-align: left;
-    margin-bottom: 2rem;
-}
-
-.stSubheader {
-    color: #4b5563;
-    font-size: 1rem;
-    text-align: left;
-    margin-bottom: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 div.stButton > button {
@@ -37,14 +16,6 @@ div.stButton > button {
 div.stButton > button:hover {
     background-color: #4338ca;
     cursor: pointer;
-}
-
-/* Logged-in user info */
-.user-info {
-    text-align: right;
-    font-size: 0.9rem;
-    color: #374151;
-    margin-top: -2rem;
 }
 """
 
