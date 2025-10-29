@@ -6,7 +6,7 @@ body {
 }
 
 div.stButton > button {
-    background-color: #4f46e5;
+    background-color: #6a64e7ff;
     color: white;
     font-size: 1rem;
     border-radius: 8px;
