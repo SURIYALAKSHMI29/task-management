@@ -20,6 +20,10 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
         st.markdown(script, unsafe_allow_html=True)
         cols = st.columns([task_width, button_width])
         with cols[0]:
+            repetitive_html = ""
+            if task.get("repetitive_type"):
+                repetitive_html = f'<div class="taskRepetitive">Repetitive: {task["repetitive_type"].capitalize()}</div>'
+
             st.markdown(
                 f"""
                 <div class="taskContainer">
@@ -29,8 +33,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                     <div class="taskInfo">
                         <div class="taskDeadline">Deadline: {deadline}</div>
                         <div class="taskPriority">Priority: {task['priority'].capitalize()}</div>
-                        <div class="taskRepetitiveType"> Repetitive:{task['repetitive_type'].capitalize() if task['repetitive_type'] else ""}</div>
-                    </div>
+                        {repetitive_html}</div>
                 </div>
 
             """,
@@ -62,23 +65,29 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                     }
                     st.button(
                         "✎",
+                        type="tertiary",
                         key=f"edit-{unique_key}",
                         on_click=edit_task,
                         args=[task],
+                        help="Edit",
                     )
                 with buttons[1]:
                     st.button(
                         "✔",
+                        type="tertiary",
                         key=f"done-{unique_key}",
                         on_click=complete_task,
                         args=[task],
+                        help="Mark as Done",
                     )
                 with buttons[2]:
                     st.button(
                         "🗑",
+                        type="tertiary",
                         key=f"delete-{unique_key}",
                         on_click=delete_task,
                         args=[task],
+                        help="Delete",
                     )
             else:
                 st.markdown(
@@ -115,20 +124,6 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                 opacity: 1;
                 background-color: #333;
                 transition: 0.3s;
-            }
-
-            div[data-testid='stVerticalBlock']:has(div#button_container_inner):not(:has(div#button_container_outer])) button {
-                border: none;
-                background-color: #333;
-                margin: 2px;
-                cursor: pointer;
-                color: #f1f1f1;
-                transition: background 0.2s;
-                font-size: 1.5em;
-            }
-
-            div[data-testid='stVerticalBlock']:has(div#button_container_inner):not(:has(div#button_container_outer])) button:hover {
-                background-color: #333;
             }
             
         </style>
