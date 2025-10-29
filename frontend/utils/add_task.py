@@ -5,14 +5,13 @@ import requests
 import streamlit as st
 
 
-def force_calendar_rerender():
-    st.session_state["calendar_key"] = str(uuid.uuid4())
-    st.rerun()
-
-
-def close_task():
+def close_task(state=None):
     st.session_state["edit_task"] = None
-    force_calendar_rerender()
+    if state:
+        st.session_state.reset_calendar_state = True
+    st.rerun()
+    # dialog can be closed programmatically by rerun alone
+    # inherits behaviour from st.fragment -> user interactions reruns the dialog only
 
 
 def create_edit_task_schema():
@@ -27,13 +26,14 @@ def create_edit_task_schema():
         },
     }
     st.session_state["edit_task"] = task
+    return task
 
 
-@st.dialog("Task Details")
-def show_task():
+@st.dialog("Task Details", width="medium")
+def show_task(state=None):
     task = st.session_state["edit_task"]
     if task is None:
-        create_edit_task_schema()
+        task = create_edit_task_schema()
     title = st.text_input("Title", value=task.get("title"))
     extended_props = task["extendedProps"]
 
@@ -53,14 +53,21 @@ def show_task():
 
     checkboxes = st.columns([1, 1, 1])
     with checkboxes[0]:
+        is_recurring = extended_props.get("repetitive") is not None
         repetitive_status = st.checkbox(
-            "Repetitive task", value=extended_props.get("repetitive")
+            "Repetitive task",
+            value=extended_props.get("repetitive"),
+            disabled=is_recurring,
         )
     with checkboxes[1]:
         pinned = st.checkbox("Pinned", value=extended_props.get("pinned"))
 
     if repetitive_status:
-        is_recurring = st.selectbox(
+        if is_recurring:
+            # ensure that remove recurrence is shown only if task is recurring
+            with checkboxes[2]:
+                remove_recurring = st.checkbox("Remove Recurrence", value=False)
+        repetitive_type = st.selectbox(
             "Repetitive Type",
             ["daily", "weekly", "monthly"],
             index=["daily", "weekly", "monthly"].index(
@@ -73,15 +80,15 @@ def show_task():
         repeat_until = st.date_input(
             "Repeat until", value=extended_props.get("repeat_until")
         )
-
     deadline = st.date_input("Deadline", value=extended_props.get("deadline"))
 
-    st.write()
+    if not st.session_state.get("user"):
+        st.warning("Log in to add tasks")
     buttons = st.columns([0.8, 0.9, 1.2, 0.5])
     with buttons[1]:
         cancel = st.button("Cancel")
     with buttons[2]:
-        save = st.button("Save Changes")
+        save = st.button("Save Changes", disabled=st.session_state.get("user") is None)
     if save:
         task = {
             "title": title,
@@ -92,9 +99,13 @@ def show_task():
             "deadline": str(deadline) if deadline else None,
         }
         payload = {"task_in": task}
-        if repetitive_status:
-            payload["repetitive_type"] = is_recurring
+        if is_recurring:
+            payload["remove_recurring"] = remove_recurring
+        elif repetitive_status:
+            payload["repetitive_type"] = repetitive_type
             payload["repeat_until"] = str(repeat_until) if repeat_until else None
+
+        print(payload)
 
         backend_url = st.secrets["backend"]["task_url"]
         header = {"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -124,7 +135,7 @@ def show_task():
             st.success("Task updated successfully.")
         st.session_state.refresh_user_tasks = True
         time.sleep(2)
-        close_task()
+        close_task(state)
 
     if cancel:
-        close_task()
+        close_task(state)
