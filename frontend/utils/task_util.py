@@ -159,7 +159,7 @@ def categorize_tasks(user_tasks, user_task_history):
                 task["end"] = deadline
                 if deadline == today:
                     today_tasks.append(task)
-                elif deadline >= today:
+                if deadline >= today:
                     if deadline <= nearest_sunday:
                         weekly_tasks.append(task)
                     upcoming_tasks.append(task)
@@ -177,10 +177,16 @@ def edit_task(task):
 
 def complete_task(task):
     # print(task["id"], "completed")
+
+    start = task.get("start") or task.get("deadline")
+    start = datetime.strptime(start, "%Y-%m-%d").date()
+    end = task.get("end") or task.get("deadline")
+    end = datetime.strptime(end, "%Y-%m-%d").date()
+
     backend_url = st.secrets["backend"]["task_url"]
     header = {"Authorization": f"Bearer {st.session_state.access_token}"}
     response = requests.patch(
-        f"{backend_url}/complete-task/{task.get('id')}", headers=header
+        f"{backend_url}/complete-task/{task.get('id')}/{start}/{end}", headers=header
     )
 
     if response.status_code == 200:
