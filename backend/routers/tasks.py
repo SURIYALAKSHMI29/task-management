@@ -86,18 +86,18 @@ def scheduled_task_updates():
 
 
 # creates appropriate task history based on its recurring type
-def updateTaskHistory(task: Task, status: TaskStatus, session: Session):
+def updateTaskHistory(
+    task: Task, status: TaskStatus, session: Session, start=None, end=None
+):
     if task.deadline is None and task.recurring_task is None:
         return
     deadline = task.deadline
-    start = deadline
-    end = deadline
     today = date.today()
 
     close_task = False
 
     # finding appropriate start and end dates
-    if task.recurring_task is not None:
+    if task.recurring_task is not None and start is None and end is None:
         recurring_task = session.get(RecurringTask, task.recurring_task.id)
         repetitive_type = recurring_task.repetitive_type
         repeat_until = recurring_task.repeat_until
@@ -121,6 +121,8 @@ def updateTaskHistory(task: Task, status: TaskStatus, session: Session):
             close_task = True
             end = repeat_until
     else:
+        start = deadline if start is None else start
+        end = deadline if end is None else end
         close_task = True
 
     # find if task history is found with existing data
@@ -249,16 +251,18 @@ def update_task(
     return bind_task_details(task)
 
 
-@router.patch("/complete-task/{id}")
+@router.patch("/complete-task/{id}/{start}/{end}")
 def complete_task(
     id: int,
+    start: date,
+    end: date,
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     print(id)
     task = get_task_by_id(id, session)
     if verify_current_user(task.user_id, current_user["user_email"], session):
-        updateTaskHistory(task, TaskStatus.COMPLETED, session)
+        updateTaskHistory(task, TaskStatus.COMPLETED, session, start, end)
         session.refresh(task)
         return bind_task_details(task)
     return
