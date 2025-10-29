@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 
 import streamlit as st
+from pages.calendar_view import calendar_view
 from styles.task_css import inject_css
 from utils.fetch_tasks import load_and_categorize_tasks
 from utils.task_card import display_tasks
@@ -35,6 +36,10 @@ user_tasks.sort(
 )
 
 
+def change_task_view():
+    st.session_state.list_view = not st.session_state.list_view
+
+
 def search_task_list(tasks, search_term):
     return [task for task in tasks if task["title"].lower().find(search_term) != -1]
 
@@ -62,7 +67,18 @@ def filter_tasks(prop, value):
     user_tasks = filter_task_list(user_tasks, prop, value)
 
 
-toolbar_cols = st.columns([3, 2, 1, 1])
+calendar_options = {
+    "headerToolbar": {
+        "left": "prev,next today",
+        "center": "title",
+        "right": "",
+    },
+    "initialView": "dayGridMonth",
+    "editable": False,
+    "selectable": False,
+}
+
+toolbar_cols = st.columns([3, 2, 1, 1, 0.2])
 
 with toolbar_cols[0]:
     st.text_input(
@@ -87,6 +103,21 @@ with toolbar_cols[3]:
         key="priority",
         label_visibility="collapsed",
     )
+with toolbar_cols[4]:
+    if st.session_state.list_view:
+        st.button(
+            "🗓️",
+            type="tertiary",
+            help="Calendar View",
+            on_click=change_task_view,
+        )
+    else:
+        st.button(
+            "📋",
+            type="tertiary",
+            help="List View",
+            on_click=change_task_view,
+        )
 
 st.write("")
 
@@ -99,14 +130,17 @@ if st.session_state.priority != "Priority":
 if st.session_state.repetitive_type != "Repetivity":
     filter_tasks("repetitive_type", st.session_state.repetitive_type.lower())
 
-with st.container():
-    tabs = st.tabs(["Today", "This Week", "Overdue", "All Tasks"])
+if st.session_state.list_view:
+    with st.container():
+        tabs = st.tabs(["Today", "This Week", "Overdue", "All Tasks"])
 
-    with tabs[0]:
-        display_tasks(today_tasks, section_name="today")
-    with tabs[1]:
-        display_tasks(weekly_tasks, section_name="weekly")
-    with tabs[2]:
-        display_tasks(overdue_tasks, section_name="overdue")
-    with tabs[3]:
-        display_tasks(user_tasks, section_name="user_tasks")
+        with tabs[0]:
+            display_tasks(today_tasks, section_name="today")
+        with tabs[1]:
+            display_tasks(weekly_tasks, section_name="weekly")
+        with tabs[2]:
+            display_tasks(overdue_tasks, section_name="overdue")
+        with tabs[3]:
+            display_tasks(user_tasks, section_name="user_tasks")
+else:
+    calendar_view(user_tasks, calendar_options, True)
