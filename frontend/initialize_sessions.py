@@ -57,3 +57,6 @@ def initialize_sessions():
 
     if "refresh_user_tasks" not in st.session_state:
         st.session_state.refresh_user_tasks = False
+
+    if "list_view" not in st.session_state:
+        st.session_state.list_view = True
