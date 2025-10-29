@@ -205,7 +205,7 @@ def update_task(
     task_in: TaskIn,
     repetitive_type: Optional[RecurrenceType] = Body(None),
     repeat_until: Optional[date] = Body(None),
-    remove_recurring: Optional[bool] = False,
+    remove_recurring: Optional[bool] = Body(False),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -227,12 +227,7 @@ def update_task(
         # print(key, value)
         setattr(task, key, value)
 
-    if remove_recurring:
-        if task.recurring_task:
-            session.delete(task.recurring_task)
-            task.recurring_task = None
-
-    elif repetitive_type or repeat_until:
+    if repetitive_type or repeat_until:
         if task.recurring_task:
             if repetitive_type:
                 task.recurring_task.repetitive_type = repetitive_type
@@ -246,6 +241,11 @@ def update_task(
             )
             task.recurring_task = recurring_task
             session.add(recurring_task)
+
+    if remove_recurring:
+        if task.recurring_task:
+            session.delete(task.recurring_task)
+            task.recurring_task = None
 
     task = add_to_db(task, session)
     return bind_task_details(task)
