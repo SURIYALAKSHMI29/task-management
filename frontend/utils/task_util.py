@@ -14,7 +14,7 @@ def get_user_tasks():
 
     if response.status_code == 200:
         st.session_state.user_tasks = response.json()
-        # print("returning user_tasks: ", st.session_state.user_tasks)
+        print("returning user_tasks: ", st.session_state.user_tasks)
     else:
         st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
 
@@ -170,6 +170,37 @@ def categorize_tasks(user_tasks, user_task_history):
     st.session_state.upcoming_tasks = upcoming_tasks
 
 
+def get_str_date(date):
+    return str(date) if type(date) == date else date
+
+
+def remove_task_from_categories(task):
+    categories = [
+        "today_tasks",
+        "pinned_tasks",
+        "weekly_tasks",
+        "upcoming_tasks",
+        "overdue_tasks",
+    ]
+    print(task)
+    print("\nid", task["id"])
+    task_start = get_str_date(task.get("start"))
+    task_end = get_str_date(task.get("end"))
+    for category in categories:
+        st.session_state[category] = [
+            t
+            for t in st.session_state[category]
+            if not (
+                t.get("id") == task["id"]
+                and get_str_date(t.get("start")) == task_start
+                and get_str_date(t.get("end")) == task_end
+            )
+        ]
+    st.session_state.completed_tasks = [
+        task for task in st.session_state.completed_tasks if task["id"] != task["id"]
+    ]
+
+
 def edit_task(task):
     st.session_state["edit_task"] = task
     show_task()
@@ -178,10 +209,12 @@ def edit_task(task):
 def complete_task(task):
     # print(task["id"], "completed")
 
-    start = task.get("start") or task.get("deadline")
-    start = datetime.strptime(start, "%Y-%m-%d").date()
-    end = task.get("end") or task.get("deadline")
-    end = datetime.strptime(end, "%Y-%m-%d").date()
+    start = task.get("start")
+    start = (
+        (datetime.strptime(start, "%Y-%m-%d").date()) if type(start) == str else start
+    )
+    end = task.get("end")
+    end = datetime.strptime(end, "%Y-%m-%d").date() if type(end) == str else end
 
     backend_url = st.secrets["backend"]["task_url"]
     header = {"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -205,7 +238,7 @@ def delete_task(task):
 
     if response.status_code == 200:
         st.cache_data.clear()
-        st.session_state.refresh_user_tasks = True
-        st.success("Task deleted successfully!")
+        remove_task_from_categories(task)
+        print("Task deleted successfully!")
     else:
-        st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
+        print(f"Failed to fetch tasks: {response.status_code} - {response.text}")
