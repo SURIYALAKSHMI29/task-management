@@ -7,11 +7,11 @@ inject_css()
 
 st.header("Upcoming Tasks")
 
-upcoming_tasks = st.session_state.upcoming_tasks
-
 if st.session_state.refresh_user_tasks:
     load_and_categorize_tasks()
     st.session_state.refresh_user_tasks = False
+
+upcoming_tasks = st.session_state.upcoming_tasks
 
 st.markdown(
     """
@@ -38,7 +38,7 @@ calendar_options = {
         "right": "dayGridMonth listWeek listMonth",
     },
     "initialView": "dayGridMonth",
-    "editable": True,
+    "editable": False,
     "selectable": False,
     "eventDisplay": "list-item",
     "buttonText": {
