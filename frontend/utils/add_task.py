@@ -76,7 +76,13 @@ def show_task():
 
     deadline = st.date_input("Deadline", value=extended_props.get("deadline"))
 
-    if st.button("Save Changes"):
+    st.write()
+    buttons = st.columns([0.8, 0.9, 1.2, 0.5])
+    with buttons[1]:
+        cancel = st.button("Cancel")
+    with buttons[2]:
+        save = st.button("Save Changes")
+    if save:
         task = {
             "title": title,
             "description": description,
@@ -120,5 +126,5 @@ def show_task():
         time.sleep(2)
         close_task()
 
-    if st.button("Cancel"):
+    if cancel:
         close_task()
