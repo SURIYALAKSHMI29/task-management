@@ -1,5 +1,5 @@
 from datetime import date as date_module
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import streamlit as st
 from streamlit_calendar import calendar
@@ -20,19 +20,28 @@ def calendar_view(tasks, calendar_options, include_end=False):
             .fc-toolbar-title {
                 font-size: 2rem;
             }
+            .fc-event {
+                cursor: pointer;
+            }
+            .fc-daygrid-day {
+                cursor: pointer;
+            }
         """
+    if "reset_calendar_state" not in st.session_state:
+        st.session_state.reset_calendar_state = True
 
-    def get_isoformat_date(inp_date):
+    def get_date(inp_date):
         if type(inp_date) != date_module:
             inp_date = datetime.strptime(inp_date, "%Y-%m-%d").date()
-        return inp_date.isoformat()
+        return inp_date
 
     events = []
     for task in tasks:
-        start = get_isoformat_date(task["end"])
-        end = get_isoformat_date(task["end"])
+        start = get_date(task["end"]).isoformat()
+        end = (get_date(task["end"]) + timedelta(days=1)).isoformat()
+        deadline = start
         if include_end:
-            start = get_isoformat_date(task["start"])
+            start = get_date(task["start"]).isoformat()
 
         events.append(
             {
@@ -51,21 +60,25 @@ def calendar_view(tasks, calendar_options, include_end=False):
                     "priority": task.get("priority"),
                     "status": task.get("status"),
                     "pinned": task.get("pinned"),
-                    "deadline": end,
+                    "deadline": deadline,
                     "repetitive": task.get("repetitive"),
                     "repeat_until": task.get("repeat_until"),
                 },
                 "tooltip": task.get("description") or task["title"],
             }
         )
-        # print(task["title"], task["repetitive_type"])
-
     state = calendar(
         events=events,
         options=calendar_options,
-        key=st.session_state["calendar_key"],
         custom_css=custom_css,
     )
+
+    if st.session_state.reset_calendar_state:
+        state = {
+            "callback": "eventsSet",
+            "eventsSet": {"events": []},
+        }
+        st.session_state.reset_calendar_state = False
 
     if state.get("callback") == "eventClick":
         st.session_state["edit_task"] = state["eventClick"]["event"]
@@ -86,15 +99,5 @@ def calendar_view(tasks, calendar_options, include_end=False):
         }
         print(st.session_state["edit_task"])
 
-    if state.get("callback") == "eventDrop":
-        event = state["eventDrop"]["event"]
-        task_id = event["id"]
-        task_deadline = event["start"].isoformat()
-
-        for task in st.session_state["user_tasks"]:
-            if str(task["id"]) == task_id:
-                task["deadline"] = task_deadline
-                break
-
     if st.session_state["edit_task"]:
-        show_task()
+        show_task(state)
