@@ -19,6 +19,11 @@ inject_css()
 inject_home_css()
 
 
+if st.session_state.refresh_user_tasks:
+    load_and_categorize_tasks()
+    st.session_state.refresh_user_tasks = False
+
+
 def logout():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
@@ -132,7 +137,6 @@ else:
         """,
         unsafe_allow_html=True,
     )
-
     load_and_categorize_tasks()
     pinned_tasks = st.session_state.pinned_tasks
     today_tasks = st.session_state.today_tasks
@@ -162,7 +166,6 @@ else:
             if len(pinned_tasks) >= 1:
                 display_tasks(
                     pinned_tasks,
-                    icon="&#128204;",
                     section_name="pinned",
                     task_width=3,
                     button_width=1,
