@@ -122,10 +122,11 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True,
     )
 else:
+    name = st.session_state.user["name"] or "Guest"
     st.markdown(
         f"""
         <div class="greeting-card">
-            <h2>Welcome back, <span class="user-name">{st.session_state.user["name"].capitalize()}</span>!</h2>
+            <h2>Welcome back, <span class="user-name">{name.capitalize()}</span>!</h2>
             <p>Let's make today productive!</p>
         </div>
         """,
