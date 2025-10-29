@@ -15,9 +15,25 @@ def close_task():
     force_calendar_rerender()
 
 
+def create_edit_task_schema():
+    task = {
+        "title": "",
+        "id": None,
+        "extendedProps": {
+            "description": "",
+            "priority": "medium",
+            "status": "pending",
+            "pinned": False,
+        },
+    }
+    st.session_state["edit_task"] = task
+
+
 @st.dialog("Task Details")
 def show_task():
     task = st.session_state["edit_task"]
+    if task is None:
+        create_edit_task_schema()
     title = st.text_input("Title", value=task.get("title"))
     extended_props = task["extendedProps"]
 
