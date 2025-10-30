@@ -1,6 +1,7 @@
 import streamlit as st
-from initialize_sessions import initialize_sessions
-from styles.app_css import inject_css
+
+from frontend.styles.app_css import inject_css
+from frontend.utils.initialize_sessions import initialize_sessions
 
 inject_css()
 
