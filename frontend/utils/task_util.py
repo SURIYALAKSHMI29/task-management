@@ -66,7 +66,15 @@ def check_task_status(task_id, start, end):
     return True
 
 
+def extend_tasks_and_sort(tasks, category, priority_order):
+    st.session_state[category].extend(tasks)
+    st.session_state[category] = sort_tasks(st.session_state[category], priority_order)
+
+    print("\n category:", category, "\n", st.session_state[category], "\n")
+
+
 def categorize_tasks(user_tasks, user_task_history):
+    print("\n\ntasks came in to categorize", user_tasks, "\n")
     today = date.today()
     nearest_sunday = date.today() + timedelta(days=(6 - today.weekday()) % 6)
     nearest_monday = date.today() - timedelta(days=today.weekday())
@@ -81,16 +89,20 @@ def categorize_tasks(user_tasks, user_task_history):
     priority_order = {"high": 1, "medium": 2, "low": 3}
 
     for task in user_task_history:
-        # print("\n", task)
+        end_date = (
+            datetime.strptime(task.get("end"), "%Y-%m-%d").date()
+            if type(task.get("end")) == str
+            else task.get("end")
+        )
         if task.get("completed_at"):
             # print("added to complete tasks\n")
             completed_tasks.append(task)
-        elif datetime.strptime(task.get("end"), "%Y-%m-%d").date() < today:
+        elif end_date < today:
             # print("added to overdue tasks\n")
             overdue_tasks.append(task)
 
-    st.session_state.completed_tasks = sort_tasks(completed_tasks, priority_order)
-    st.session_state.overdue_tasks = sort_tasks(overdue_tasks, priority_order)
+    extend_tasks_and_sort(completed_tasks, "completed_tasks", priority_order)
+    extend_tasks_and_sort(overdue_tasks, "overdue_tasks", priority_order)
 
     for task in user_tasks:
         status = task.get("status")
@@ -163,42 +175,45 @@ def categorize_tasks(user_tasks, user_task_history):
                     if deadline <= nearest_sunday:
                         weekly_tasks.append(task)
                     upcoming_tasks.append(task)
+                else:
+                    overdue_tasks.append(task)
 
-    st.session_state.today_tasks = sort_tasks(today_tasks, priority_order)
-    st.session_state.pinned_tasks = sort_tasks(pinned_tasks, priority_order)
-    st.session_state.weekly_tasks = sort_tasks(weekly_tasks, priority_order)
-    st.session_state.upcoming_tasks = upcoming_tasks
+    print("After categorizing,\n")
+    extend_tasks_and_sort(today_tasks, "today_tasks", priority_order)
+    extend_tasks_and_sort(pinned_tasks, "pinned_tasks", priority_order)
+    extend_tasks_and_sort(weekly_tasks, "weekly_tasks", priority_order)
+    st.session_state.upcoming_tasks.extend(upcoming_tasks)
 
 
 def get_str_date(date):
     return str(date) if type(date) == date else date
 
 
-def remove_task_from_categories(task):
-    categories = [
-        "today_tasks",
-        "pinned_tasks",
-        "weekly_tasks",
-        "upcoming_tasks",
-        "overdue_tasks",
-    ]
-    print(task)
-    print("\nid", task["id"])
+def remove_task_from_categories(task, categories, remove_all=False):
+
+    # removes a task from given categories
+    # If remove_all=True, removes teh entire task and its recurrences (same id)
+    # else, removes only the specific task (matching start & end)
     task_start = get_str_date(task.get("start"))
     task_end = get_str_date(task.get("end"))
+
+    print("\n\nTask came to remove:", task)
     for category in categories:
         st.session_state[category] = [
             t
             for t in st.session_state[category]
             if not (
                 t.get("id") == task["id"]
-                and get_str_date(t.get("start")) == task_start
-                and get_str_date(t.get("end")) == task_end
+                and (
+                    remove_all
+                    or (
+                        get_str_date(t.get("start")) == task_start
+                        and get_str_date(t.get("end")) == task_end
+                    )
+                )
             )
         ]
-    st.session_state.completed_tasks = [
-        task for task in st.session_state.completed_tasks if task["id"] != task["id"]
-    ]
+        print("Removed task from category:", category, "\n", st.session_state[category])
 
 
 def edit_task(task):
@@ -207,8 +222,6 @@ def edit_task(task):
 
 
 def complete_task(task):
-    # print(task["id"], "completed")
-
     start = task.get("start")
     start = (
         (datetime.strptime(start, "%Y-%m-%d").date()) if type(start) == str else start
@@ -224,7 +237,17 @@ def complete_task(task):
 
     if response.status_code == 200:
         st.cache_data.clear()
-        st.session_state.refresh_user_tasks = True
+        task["status"] = "completed"
+        task["completed_at"] = date.today()
+        categories = [
+            "today_tasks",
+            "pinned_tasks",
+            "weekly_tasks",
+            "upcoming_tasks",
+            "overdue_tasks",
+        ]
+        remove_task_from_categories(task, categories)
+        st.session_state.completed_tasks.append(task)
     else:
         st.error(f"Failed to fetch tasks: {response.status_code} - {response.text}")
 
@@ -238,7 +261,16 @@ def delete_task(task):
 
     if response.status_code == 200:
         st.cache_data.clear()
-        remove_task_from_categories(task)
+        categories = [
+            "today_tasks",
+            "weekly_tasks",
+            "pinned_tasks",
+            "overdue_tasks",
+            "upcoming_tasks",
+            "completed_tasks",
+        ]
+        # task and its recurrences
+        remove_task_from_categories(task, categories, remove_all=True)
         print("Task deleted successfully!")
     else:
         print(f"Failed to fetch tasks: {response.status_code} - {response.text}")
