@@ -1,7 +1,5 @@
 # Task Management (v1)
 
----
-
 ## Features
 
 - Users can add, edit, delete tasks, and mark them as completed  
