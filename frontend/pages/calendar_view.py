@@ -93,4 +93,4 @@ def calendar_view(tasks, calendar_options, include_end=False):
         print(st.session_state["edit_task"])
 
     if st.session_state["edit_task"]:
-        show_task(state)
+        show_task()
