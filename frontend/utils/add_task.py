@@ -5,10 +5,8 @@ import requests
 import streamlit as st
 
 
-def close_task(state=None):
+def close_task():
     st.session_state["edit_task"] = None
-    if state:
-        st.session_state.reset_calendar_state = True
     st.rerun()
     # dialog can be closed programmatically by rerun alone
     # inherits behaviour from st.fragment -> user interactions reruns the dialog only
@@ -30,7 +28,7 @@ def create_edit_task_schema():
 
 
 @st.dialog("Task Details", width="medium")
-def show_task(state=None):
+def show_task():
     task = st.session_state["edit_task"]
     if task is None:
         task = create_edit_task_schema()
@@ -90,6 +88,10 @@ def show_task(state=None):
     with buttons[2]:
         save = st.button("Save Changes", disabled=st.session_state.get("user") is None)
     if save:
+        # local import to avoid circular dependency
+        # show_task is called from task_util
+        from utils.task_util import categorize_tasks, remove_task_from_categories
+
         task = {
             "title": title,
             "description": description,
@@ -101,7 +103,7 @@ def show_task(state=None):
         payload = {"task_in": task}
         if is_recurring:
             payload["remove_recurring"] = remove_recurring
-        elif repetitive_status:
+        if repetitive_status:
             payload["repetitive_type"] = repetitive_type
             payload["repeat_until"] = str(repeat_until) if repeat_until else None
 
@@ -116,26 +118,39 @@ def show_task(state=None):
                 headers=header,
                 json=payload,
             )
-            if response.status_code != 200:
+            if response.status_code == 200:
+                new_task = response.json()
+                categorize_tasks([new_task], [])
+                st.success("Task added successfully.")
+            else:
                 st.error(
                     f"Failed to add task: {response.status_code} - {response.text}"
                 )
-            else:
-                st.success("Task added successfully.")
         else:
             response = requests.patch(
                 f"{backend_url}/update-task/{st.session_state['edit_task'].get('id')}",
                 headers=header,
                 json=payload,
             )
-            if response.status_code != 200:
+            if response.status_code == 200:
+                updated_task = response.json()
+                categories = [
+                    "today_tasks",
+                    "weekly_tasks",
+                    "pinned_tasks",
+                    "overdue_tasks",
+                    "upcoming_tasks",
+                ]
+                remove_task_from_categories(st.session_state["edit_task"], categories)
+                categorize_tasks([updated_task], [])
+
+            else:
                 st.error(
                     f"Failed to update task: {response.status_code} - {response.text}"
                 )
             st.success("Task updated successfully.")
-        st.session_state.refresh_user_tasks = True
         time.sleep(2)
-        close_task(state)
+        close_task()
 
     if cancel:
-        close_task(state)
+        close_task()
