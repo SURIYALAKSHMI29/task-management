@@ -48,7 +48,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                 st.markdown(script, unsafe_allow_html=True)
                 buttons = st.columns([1, 1, 1])
                 with buttons[0]:
-                    edit_task = {
+                    edited_task = {
                         "id": task.get("id"),
                         "title": task.get("title"),
                         "start": task.get("start"),
@@ -68,7 +68,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                         type="tertiary",
                         key=f"edit-{unique_key}",
                         on_click=edit_task,
-                        args=[edit_task],
+                        args=[edited_task],
                         help="Edit",
                     )
                 with buttons[1]:
