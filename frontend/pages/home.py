@@ -18,10 +18,9 @@ if PROJECT_ROOT not in sys.path:
 inject_css()
 inject_home_css()
 
-
-if st.session_state.refresh_user_tasks:
+if st.session_state.load_tasks and st.session_state.user_email:
     load_and_categorize_tasks()
-    st.session_state.refresh_user_tasks = False
+    st.session_state.load_tasks = False
 
 
 def logout():
@@ -137,15 +136,15 @@ else:
         """,
         unsafe_allow_html=True,
     )
-    load_and_categorize_tasks()
+
     pinned_tasks = st.session_state.pinned_tasks
     today_tasks = st.session_state.today_tasks
 
     with st.container():
         task_columns = st.columns([2, 1])
         with task_columns[0]:
+            st.markdown("### Today's Tasks ")
             if len(st.session_state.today_tasks) >= 1:
-                st.markdown("### Today's Tasks ")
                 display_tasks(
                     today_tasks, section_name="today", task_width=7, button_width=1
                 )

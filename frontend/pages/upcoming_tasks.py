@@ -7,10 +7,6 @@ inject_css()
 
 st.header("Upcoming Tasks")
 
-if st.session_state.refresh_user_tasks:
-    load_and_categorize_tasks()
-    st.session_state.refresh_user_tasks = False
-
 upcoming_tasks = st.session_state.upcoming_tasks
 
 st.markdown(
