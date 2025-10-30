@@ -27,8 +27,8 @@ def calendar_view(tasks, calendar_options, include_end=False):
                 cursor: pointer;
             }
         """
-    if "reset_calendar_state" not in st.session_state:
-        st.session_state.reset_calendar_state = True
+
+    st.session_state["edit_task"] = None
 
     def get_date(inp_date):
         if type(inp_date) != date_module:
@@ -72,13 +72,6 @@ def calendar_view(tasks, calendar_options, include_end=False):
         options=calendar_options,
         custom_css=custom_css,
     )
-
-    if st.session_state.reset_calendar_state:
-        state = {
-            "callback": "eventsSet",
-            "eventsSet": {"events": []},
-        }
-        st.session_state.reset_calendar_state = False
 
     if state.get("callback") == "eventClick":
         st.session_state["edit_task"] = state["eventClick"]["event"]
