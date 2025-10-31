@@ -7,6 +7,11 @@ from sqlmodel import Field, Index, Relationship, SQLModel
 from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
 
 
+class UserWorkspaceLink(SQLModel, table=True):
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    workspace_id: int = Field(foreign_key="workspace.id", primary_key=True)
+
+
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
@@ -16,12 +21,53 @@ class User(SQLModel, table=True):
     tasks: List["Task"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+    groups: List["Group"] = Relationship(
+        back_populates="creator",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+    workspaces: List["Workspace"] = Relationship(
+        back_populates="users", link_model=UserWorkspaceLink
+    )
     __table_args__ = (Index("idx_email", "email"),)
+
+
+class Workspace(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    created_at: date = Field(default_factory=date.today)
+    created_by: int = Field(foreign_key="user.id")
+    users: List["User"] = Relationship(
+        back_populates="workspaces", link_model=UserWorkspaceLink
+    )
+    groups: List["Group"] = Relationship(
+        back_populates="workspace",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+    __table_args__ = (Index("idx_workspace_created", "created_by"),)
+
+
+class Group(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    workspace_id: Optional[int] = Field(default=None, foreign_key="workspace.id")
+    workspace: "Workspace" = Relationship(back_populates="groups")
+    tasks: List["Task"] = Relationship(
+        back_populates="group", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    creator: Optional["User"] = Relationship(back_populates="groups")
+    created_by: int = Field(foreign_key="user.id")
+    created_at: date = Field(default_factory=date.today)
+
+    __table_args__ = (
+        Index("idx_group_created", "created_by"),
+        Index("idx_workspace_id", "workspace_id"),
+    )
 
 
 class Task(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
     user_id: int = Field(foreign_key="user.id")
+    group_id: Optional[int] = Field(default=None, foreign_key="group.id")
     title: str
     description: Optional[str] = Field(default=None)
     deadline: Optional[date] = Field(default=None)
@@ -30,7 +76,9 @@ class Task(SQLModel, table=True):
     pinned: Optional[bool] = Field(default=False)
     created_at: date = Field(default_factory=date.today)
     updated_at: date = Field(default_factory=date.today)
+
     user: "User" = Relationship(back_populates="tasks")
+    group: "Group" = Relationship(back_populates="tasks")
     recurring_task: Optional["RecurringTask"] = Relationship(
         back_populates="task", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
@@ -40,8 +88,9 @@ class Task(SQLModel, table=True):
 
     __table_args__ = (
         Index("idx_user_id", "user_id"),
-        Index("idx_pinned", "pinned"),
-        Index("idx_status", "status"),
+        Index("idx_user_status", "user_id", "status"),
+        Index("idx_user_pinned", "user_id", "pinned"),
+        Index("idx_group_id", "group_id"),
     )
 
 

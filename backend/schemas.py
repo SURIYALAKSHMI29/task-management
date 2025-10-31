@@ -1,27 +1,22 @@
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr
 
 from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
+from backend.models import Workspace
 
 
 class UserIn(BaseModel):
     name: str
     password: str
     email: EmailStr
+    workspaces: List[str] = []
 
 
-class UserOut(BaseModel):
+class BaseUserOut(BaseModel):
     name: str
     email: EmailStr
-    model_config = {"from_attributes": True}
-
-
-class UserLoginResponse(BaseModel):
-    user: UserOut
-    access_token: str
-    token_type: str
 
 
 class TaskIn(BaseModel):
@@ -44,5 +39,34 @@ class TaskOut(BaseModel):
     pinned: bool
     repetitive_type: Optional[RecurrenceType] = None
     repeat_until: Optional[date] = None
-
     model_config = {"from_attributes": True}  # allows reading from ORM/SQLModel objects
+
+
+class GroupOut(BaseModel):
+    id: int
+    name: str
+    tasks: List[TaskOut] = []
+    created_by: int
+    model_config = {"from_attributes": True}
+
+
+class WorkspaceOut(BaseModel):
+    id: int
+    name: str
+    groups: List[GroupOut] = []
+    created_by: int
+    model_config = {"from_attributes": True}
+
+
+class UserOut(BaseModel):
+    name: str
+    email: EmailStr
+    user_groups: List[GroupOut] = []
+    workspaces: List[WorkspaceOut] = []
+    model_config = {"from_attributes": True}
+
+
+class UserLoginResponse(BaseModel):
+    user: UserOut
+    access_token: str
+    token_type: str
