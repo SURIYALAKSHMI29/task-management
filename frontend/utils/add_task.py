@@ -154,3 +154,4 @@ def show_task():
 
     if cancel:
         close_task()
+    st.session_state.reset_calendar_state = True
