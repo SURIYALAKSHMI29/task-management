@@ -67,11 +67,13 @@ def calendar_view(tasks, calendar_options, include_end=False):
                 "tooltip": task.get("description") or task["title"],
             }
         )
-    state = calendar(
-        events=events,
-        options=calendar_options,
-        custom_css=custom_css,
-    )
+
+    state = calendar(events=events, options=calendar_options, custom_css=custom_css)
+    print(state)
+    if st.session_state.reset_calendar_state:
+        state = st.session_state.calendar_state
+        st.session_state.reset_calendar_state = False
+    st.session_state.calendar_state = state
 
     if state.get("callback") == "eventClick":
         st.session_state["edit_task"] = state["eventClick"]["event"]
