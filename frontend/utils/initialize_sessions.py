@@ -1,5 +1,3 @@
-import uuid
-
 import streamlit as st
 
 
@@ -57,3 +55,18 @@ def initialize_sessions():
 
     if "load_tasks" not in st.session_state:
         st.session_state.load_tasks = True
+
+    if "reset_calendar_state" not in st.session_state:
+        st.session_state.reset_calendar_state = False
+
+    if "calendar_state" not in st.session_state:
+        st.session_state.calendar_state = None
+
+    if "user_groups" not in st.session_state:
+        st.session_state["user_groups"] = []
+
+    if "user_workspaces" not in st.session_state:
+        st.session_state["user_workspaces"] = []
+
+    if "user_workspace" not in st.session_state:
+        st.session_state["user_workspace"] = None
