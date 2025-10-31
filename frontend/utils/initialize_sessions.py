@@ -57,3 +57,9 @@ def initialize_sessions():
 
     if "load_tasks" not in st.session_state:
         st.session_state.load_tasks = True
+        
+    if "reset_calendar_state" not in st.session_state:
+        st.session_state.reset_calendar_state = False
+
+    if "calendar_state" not in st.session_state:
+        st.session_state.calendar_state = None
