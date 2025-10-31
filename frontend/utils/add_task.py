@@ -21,6 +21,7 @@ def create_edit_task_schema():
             "priority": "medium",
             "status": "pending",
             "pinned": False,
+            "group": None,
         },
     }
     st.session_state["edit_task"] = task
@@ -29,24 +30,121 @@ def create_edit_task_schema():
 
 @st.dialog("Task Details", width="medium")
 def show_task():
+    st.markdown(
+        """
+        <style>
+            .stTextInput, .stTextArea, .stSelectbox, .stDateInput {
+                margin-bottom: 0.4rem !important;
+            }
+            .section-title {
+                font-weight: 600;
+                font-size: 2rem;
+                margin-top: 0.6rem;
+                margin-bottom: 0.3rem;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     task = st.session_state["edit_task"]
     if task is None:
         task = create_edit_task_schema()
-    title = st.text_input("Title", value=task.get("title"))
+    show_status = task.get("id") is not None
     extended_props = task["extendedProps"]
 
+    st.markdown(
+        '<p class="section-title">Basic Info</p>',
+        unsafe_allow_html=True,
+    )
+    title = st.text_input("Title", value=task.get("title"))
     description = st.text_area("Description", value=extended_props.get("description"))
+
     priority = st.selectbox(
         "Priority",
         ["low", "medium", "high"],
         index=["low", "medium", "high"].index(extended_props.get("priority")),
         format_func=lambda priority: priority.capitalize(),
     )
-    status = st.selectbox(
-        "Status",
-        ["pending", "completed"],
-        index=["pending", "completed"].index(extended_props.get("status")),
-        format_func=lambda status: status.capitalize(),
+    if not show_status:
+        status = "pending"
+    else:
+        status = st.selectbox(
+            "Status",
+            ["pending", "completed"],
+            index=["pending", "completed"].index(extended_props.get("status")),
+            format_func=lambda status: status.capitalize(),
+        )
+    st.divider()
+
+    st.markdown(
+        '<p class="section-title">Group</p>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Group tasks for better organization — personal or workspace")
+
+    group_cols = st.columns([1.2, 0.9, 0.7])
+
+    group_options = [{"name": "None", "id": None}] + [
+        {"name": group.name, "id": group.id}
+        for group in st.session_state["user_groups"]
+    ]
+    group_names = [g["name"] for g in group_options]
+    current_group_id = extended_props.get("group")
+    current_group_name = "None"
+    for g in group_options:
+        if g["id"] == current_group_id:
+            current_group_name = g["name"]
+            break
+
+    if "new_group_input" not in st.session_state:
+        st.session_state.new_group_input = ""
+
+    with group_cols[0]:
+        selected_group_name = st.selectbox(
+            "Group",
+            group_names,
+            index=(
+                group_names.index(current_group_name)
+                if current_group_name in group_names
+                else 0
+            ),
+            disabled=bool(st.session_state.new_group_input),
+        )
+        selected_group_id = None
+        for g in group_options:
+            if g["name"] == selected_group_name:
+                selected_group_id = g["id"]
+                break
+
+    with group_cols[1]:
+        new_group = st.text_input(
+            "New Group? ", value=st.session_state.new_group_input, key="new_group"
+        )
+        if new_group != st.session_state.new_group_input:
+            st.session_state.new_group_input = new_group
+        # if selected_group_name != "None" and st.session_state.new_group_input:
+        #     st.session_state.new_group_input = ""
+        #     st.rerun()
+
+    workspace = None
+    with group_cols[2]:
+        st.markdown(" ")
+        workspace = st.checkbox(
+            "Workspace?",
+            value=False,
+            key="belongs_to_workspace",
+            help="Make group visible to workspace members",
+        )
+
+    st.divider()
+
+    st.markdown(
+        '<p class="section-title">Options</p>',
+        unsafe_allow_html=True,
     )
 
     checkboxes = st.columns([1, 1, 1])
@@ -56,15 +154,22 @@ def show_task():
             "Repetitive task",
             value=extended_props.get("repetitive"),
             disabled=is_recurring,
+            help="Automatically repeat this task",
         )
     with checkboxes[1]:
-        pinned = st.checkbox("Pinned", value=extended_props.get("pinned"))
+        pinned = st.checkbox(
+            "Pinned",
+            value=extended_props.get("pinned"),
+            help="Keep task on top for easy access",
+        )
 
     if repetitive_status:
         if is_recurring:
             # ensure that remove recurrence is shown only if task is recurring
             with checkboxes[2]:
-                remove_recurring = st.checkbox("Remove Recurrence", value=False)
+                remove_recurring = st.checkbox(
+                    "Remove Recurrence", value=False, help="Stop recurring"
+                )
         repetitive_type = st.selectbox(
             "Repetitive Type",
             ["daily", "weekly", "monthly"],
@@ -78,11 +183,19 @@ def show_task():
         repeat_until = st.date_input(
             "Repeat until", value=extended_props.get("repeat_until")
         )
-    deadline = st.date_input("Deadline", value=extended_props.get("deadline"))
+    st.divider()
+
+    st.markdown(
+        '<p class="section-title">Schedule</p>',
+        unsafe_allow_html=True,
+    )
+    deadline = st.date_input(
+        "Deadline", value=extended_props.get("deadline"), help="Task deadline"
+    )
 
     if not st.session_state.get("user"):
         st.warning("Log in to add tasks")
-    buttons = st.columns([0.8, 0.9, 1.2, 0.5])
+    buttons = st.columns([1.1, 1, 1.2, 0.6])
     with buttons[1]:
         cancel = st.button("Cancel")
     with buttons[2]:
@@ -100,7 +213,15 @@ def show_task():
             "pinned": pinned,
             "deadline": str(deadline) if deadline else None,
         }
-        payload = {"task_in": task}
+
+        if new_group:
+            payload = {"task_in": task, "new_group": new_group, "workspace": workspace}
+        elif selected_group_id is not None:
+            task["group_id"] = selected_group_id
+            payload = {"task_in": task}
+        else:
+            payload = {"task_in": task}
+
         if is_recurring:
             payload["remove_recurring"] = remove_recurring
         if repetitive_status:
@@ -154,3 +275,4 @@ def show_task():
 
     if cancel:
         close_task()
+    st.session_state.reset_calendar_state = True
