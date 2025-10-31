@@ -10,7 +10,14 @@ from backend.helpers.auth.auth_utils import (
     get_current_user,
 )
 from backend.helpers.auth.password import hash_password, verify_password
-from backend.models import RecurringTask, Task, User
+from backend.models import (
+    Group,
+    RecurringTask,
+    Task,
+    User,
+    UserWorkspaceLink,
+    Workspace,
+)
 from backend.schemas import TaskOut, UserIn, UserLoginResponse, UserOut
 
 router = APIRouter()
@@ -41,6 +48,10 @@ def validate_email(email: EmailStr, session: Session) -> bool:
     return True
 
 
+def get_tasks_from_groups(groups: List["Group"]):
+    return [task for group in groups for task in group.tasks]
+
+
 @router.post("/login", response_model=UserLoginResponse)
 def verify_user(
     email: EmailStr = Body(...),
@@ -56,10 +67,29 @@ def verify_user(
 def register_new_user(user: UserIn, session: Session = Depends(get_session)):
     if validate_email(user.email, session):
         user.password = hash_password(user.password)
-        user_data = User(**user.model_dump())
+        user_data = User(**user.model_dump(exclude={"workspaces"}))
         session.add(user_data)
         session.commit()
         session.refresh(user_data)
+
+        for user_workspace in user.workspaces:
+            workspace = session.exec(
+                select(Workspace).where(Workspace.name == user_workspace)
+            ).first()
+            print(workspace)
+            if not workspace:
+                workspace = Workspace(name=user_workspace, created_by=user_data.id)
+                session.add(workspace)
+                session.commit()
+                session.refresh(workspace)
+                print("Created workspace", workspace)
+            user_workspace_link = UserWorkspaceLink(
+                user_id=user_data.id, workspace_id=workspace.id
+            )
+            session.add(user_workspace_link)
+            print("Created user workspace link", user_workspace_link)
+        session.commit()
+        print("user_data", user_data, "\nworkspaces", user.workspaces)
         return generate_user_login_response(user_data)
     return
 
@@ -71,6 +101,12 @@ def get_all_tasks(
 ):
     user_email = current_user["user_email"]
     user = get_user_by_email(user_email, session)
+    tasks = user.tasks
+    tasks_from_user_groups = get_tasks_from_groups(user.groups)
+    for workspace in user.workspaces:
+        tasks.extend(get_tasks_from_groups(workspace.groups))
+    tasks.extend(tasks_from_user_groups)
+
     user_tasks = []
 
     for task in user.tasks:
@@ -81,6 +117,7 @@ def get_all_tasks(
                 user_task.repetitive_type = recurring_info.repetitive_type
                 user_task.repeat_until = recurring_info.repeat_until
         user_tasks.append(user_task)
+
     return user_tasks
 
 
