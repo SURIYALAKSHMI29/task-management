@@ -3,6 +3,7 @@ import time
 import requests
 import streamlit as st
 from streamlit_modal import Modal
+from utils.load_data import load_user_details
 
 
 def login_page(modal: Modal):
@@ -23,7 +24,8 @@ def login_page(modal: Modal):
                     time.sleep(2)
                     st.session_state.access_token = data.get("access_token")
                     st.session_state.user = data.get("user")
-                    st.session_state.user_email = data.get("user")["email"]
+                    print("user", st.session_state.user)
+                    load_user_details()
                     st.session_state.active_modal = None
                     modal.close()
                 else:
@@ -32,4 +34,5 @@ def login_page(modal: Modal):
             except Exception as e:
                 st.error(f"Error: {e}")
         else:
+            st.error("Please enter email and password")
             st.error("Please enter email and password")
