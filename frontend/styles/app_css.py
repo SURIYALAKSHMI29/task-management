@@ -17,6 +17,12 @@ div.stButton > button:hover {
     background-color: #4338ca;
     cursor: pointer;
 }
+
+.divider {
+    height: 2px;
+    background: linear-gradient(120deg, #4f46e5 0%, darkgray 90%, #000 100%);
+    opacity: 0.6;
+}
 """
 
 
