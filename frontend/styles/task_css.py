@@ -33,35 +33,6 @@ CSS = """
     font-weight: bold;
 }
 
-.taskContainer .iconBar{
-    display: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.taskContainer:hover .iconBar{
-    display: flex;
-    gap: 6px;
-    opacity: 1;
-}
-
-.icon-btn {
-    border: none;
-    background-color: #333;
-    margin: 2px;
-    cursor: pointer;
-    color: #f1f1f1;
-    transition: background 0.2s;
-    font-size: 1.5em;
-}
-
-.icon-btn:hover { 
-    box-shadow: 0 2px 8px #0001
-}
-
 """
 
 

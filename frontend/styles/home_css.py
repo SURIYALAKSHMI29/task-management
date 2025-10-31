@@ -29,12 +29,6 @@ body {
     line-height: 1.4;
 }
 
-.divider {
-    height: 2px;
-    background: linear-gradient(120deg, #4f46e5 0%, darkgray 90%, #000 100%);
-    opacity: 0.6;
-}
-
 .welcome-card {
     border-radius: 10px;
     padding: 3rem;
