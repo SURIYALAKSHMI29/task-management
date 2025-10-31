@@ -1,7 +1,6 @@
 import streamlit as st
 from pages.calendar_view import calendar_view
 from styles.task_css import inject_css
-from utils.fetch_tasks import load_and_categorize_tasks
 
 inject_css()
 
