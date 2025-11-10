@@ -1,10 +1,9 @@
 from datetime import date
 from typing import List, Optional
 
+from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
 from pydantic import EmailStr
 from sqlmodel import Field, Index, Relationship, SQLModel
-
-from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
 
 
 class UserWorkspaceLink(SQLModel, table=True):
@@ -109,6 +108,7 @@ class TaskHistory(SQLModel, table=True):
     start: date
     end: date
     completed_at: Optional[date] = None
+    completed_by: Optional[int] = None
     task: "Task" = Relationship(back_populates="task_history")
 
     __table_args__ = (Index("idx_history_task_id", "task_id"),)
