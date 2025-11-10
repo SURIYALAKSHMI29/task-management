@@ -76,7 +76,7 @@ def extend_tasks_and_sort(tasks, category, priority_order):
 def categorize_tasks(user_tasks, user_task_history):
     print("\n\ntasks came in to categorize", user_tasks, "\n")
     today = date.today()
-    nearest_sunday = date.today() + timedelta(days=(6 - today.weekday()) % 6)
+    nearest_sunday = date.today() + timedelta(days=(6 - today.weekday()) % 7)
     nearest_monday = date.today() - timedelta(days=today.weekday())
     today_tasks = []
     pinned_tasks = []
@@ -84,7 +84,6 @@ def categorize_tasks(user_tasks, user_task_history):
     completed_tasks = []
     overdue_tasks = []
     upcoming_tasks = []
-    # print("User tasks (inside the categorize task function)", user_tasks, "\n")
 
     priority_order = {"high": 1, "medium": 2, "low": 3}
 
