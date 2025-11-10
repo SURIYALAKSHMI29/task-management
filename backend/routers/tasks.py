@@ -2,17 +2,24 @@ import calendar
 from datetime import date, timedelta
 from typing import Optional
 
+from backend.database import engine, get_session
+from backend.helpers.auth.auth_utils import get_current_user, verify_current_user
+from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
+from backend.models import (
+    Group,
+    RecurringTask,
+    Task,
+    TaskHistory,
+    User,
+    UserWorkspaceLink,
+    Workspace,
+)
+from backend.routers.users import get_user_by_email
+from backend.schemas import TaskCreatePayload, TaskIn, TaskOut, TaskUpdatePayload
 from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import EmailStr
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
-
-from backend.database import engine, get_session
-from backend.helpers.auth.auth_utils import get_current_user, verify_current_user
-from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
-from backend.models import RecurringTask, Task, TaskHistory
-from backend.routers.users import get_user_by_email
-from backend.schemas import TaskIn, TaskOut
 
 router = APIRouter()
 
@@ -58,6 +65,36 @@ def check_pinned_tasks(user_id: int, session: Session):
     return True
 
 
+def get_valid_user_workspace(user: User):
+    if not user.workspaces or len(user.workspaces) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="User must be part of a workspace to create workspace-related groups",
+        )
+    return user.workspaces[0].id
+
+
+def get_group_id(group_details, user_id: int, session: Session):
+    new_group = group_details.name
+    existing_group = session.exec(
+        select(Group).where(Group.name == new_group, Group.created_by == user_id)
+    ).first()
+
+    if existing_group:
+        return existing_group.id
+    group_data = {
+        "name": new_group,
+        "created_by": user_id,
+    }
+
+    if group_details.workspace_id:
+        group_data["workspace_id"] = group_details.workspace_id
+
+    new_group = Group(**group_data)
+    add_to_db(new_group, session)
+    return new_group.id
+
+
 def scheduled_task_updates():
     with Session(engine) as session:
         stmt = (
@@ -87,7 +124,12 @@ def scheduled_task_updates():
 
 # creates appropriate task history based on its recurring type
 def updateTaskHistory(
-    task: Task, status: TaskStatus, session: Session, start=None, end=None
+    task: Task,
+    status: TaskStatus,
+    session: Session,
+    user_id=None,
+    start=None,
+    end=None,
 ):
     if task.deadline is None and task.recurring_task is None:
         return
@@ -139,11 +181,10 @@ def updateTaskHistory(
         task_history = TaskHistory(task_id=task.id, start=start, end=end)
         add_to_db(task_history, session)
 
-    task_history.completed_at = (
-        today
-        if task_history.completed_at is None and status == TaskStatus.COMPLETED
-        else task_history.completed_at
-    )
+    if task_history.completed_at is None and status == TaskStatus.COMPLETED:
+        task_history.completed_at = today
+        task_history.completed_by = user_id
+
     session.commit()
 
     if close_task and status == TaskStatus.COMPLETED:
@@ -169,27 +210,33 @@ def get_task(
 
 @router.post("/add-task", response_model=TaskOut)
 def add_task(
-    task_in: TaskIn,
-    repetitive_type: Optional[RecurrenceType] = Body(None),
-    repeat_until: Optional[date] = Body(None),
+    payload: TaskCreatePayload,
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     user_email = current_user["user_email"]
     user = get_user_by_email(user_email, session)
 
-    task_data = task_in.model_dump(exclude_unset=True)
+    task_data = payload.task_in.model_dump(exclude_unset=True)
     task_data["user_id"] = user.id
-    # print(task_data)
+    print(task_data)
+
+    if payload.new_group:
+        group_details = {"name": payload.new_group, "created_by": user.id}
+        if payload.workspace:
+            group_details["workspace_id"] = get_valid_user_workspace(user)
+        task_data["group_id"] = get_group_id(group_details, user.id, session)
 
     task_data["pinned"] = task_data.get("pinned", False) and check_pinned_tasks(
         user.id, session
     )
 
     task = add_to_db(Task(**task_data), session)
-    if repetitive_type or repeat_until:
+    if payload.repetitive_type or payload.repeat_until:
         recurring_task = RecurringTask(
-            task_id=task.id, repetitive_type=repetitive_type, repeat_until=repeat_until
+            task_id=task.id,
+            repetitive_type=payload.repetitive_type,
+            repeat_until=payload.repeat_until,
         )
         add_to_db(recurring_task, session)
         session.refresh(task)  # updates the in-place relationships
@@ -202,19 +249,17 @@ def add_task(
 @router.patch("/update-task/{id}")
 def update_task(
     id: int,
-    task_in: TaskIn,
-    repetitive_type: Optional[RecurrenceType] = Body(None),
-    repeat_until: Optional[date] = Body(None),
-    remove_recurring: Optional[bool] = Body(False),
+    payload: TaskUpdatePayload,
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     user_email = current_user["user_email"]
+    user = get_user_by_email(user_email, session)
     task = get_task_by_id(id, session)
     if not verify_current_user(task.user_id, user_email, session):
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
-    task_data = task_in.model_dump(exclude_unset=True)
+    task_data = payload.task_in.model_dump(exclude_unset=True)
     for key, value in task_data.items():
         if key == "pinned":
             value = task_data["pinned"] and check_pinned_tasks(task.user_id, session)
@@ -222,17 +267,30 @@ def update_task(
         if key == "status" and value:
             value = TaskStatus(value)
         if key == "status":
-            updateTaskHistory(task, value, session)
+            updateTaskHistory(task, value, session, user.id)
             continue
         # print(key, value)
         setattr(task, key, value)
 
-    if repetitive_type or repeat_until:
+    if payload.new_group:
+        group_details = {"name": payload.new_group, "created_by": user.id}
+        if payload.workspace:
+            group_details["workspace_id"] = get_valid_user_workspace(user)
+        task_data["group_id"] = get_group_id(group_details, user.id, session)
+
+    if payload.remove_recurring:
+        if task.recurring_task:
+            session.delete(task.recurring_task)
+            task.recurring_task = None
+    elif payload.repetitive_type or payload.repeat_until:
+        repetitive_type = payload.repetitive_type
+        repeat_until = payload.repeat_until
+
         if task.recurring_task:
             if repetitive_type:
-                task.recurring_task.repetitive_type = repetitive_type
+                task.recurring_task.repetitive_type = payload.repetitive_type
             if repeat_until:
-                task.recurring_task.repeat_until = repeat_until
+                task.recurring_task.repeat_until = payload.repeat_until
         else:
             recurring_task = RecurringTask(
                 task_id=task.id,
@@ -241,11 +299,6 @@ def update_task(
             )
             task.recurring_task = recurring_task
             session.add(recurring_task)
-
-    if remove_recurring:
-        if task.recurring_task:
-            session.delete(task.recurring_task)
-            task.recurring_task = None
 
     task = add_to_db(task, session)
     return bind_task_details(task)
@@ -262,7 +315,7 @@ def complete_task(
     print(id)
     task = get_task_by_id(id, session)
     if verify_current_user(task.user_id, current_user["user_email"], session):
-        updateTaskHistory(task, TaskStatus.COMPLETED, session, start, end)
+        updateTaskHistory(task, TaskStatus.COMPLETED, session, task.user_id, start, end)
         session.refresh(task)
         return bind_task_details(task)
     return
@@ -316,6 +369,12 @@ def get_history(
         return history_list
 
     return []
+
+    # @router.get("/recurring_tasks")
+    # def recurring_tasks(session: Session = Depends(get_session)):
+    #     return session.exec(select(RecurringTask)).all()
+
+    # return []
 
 
 # @router.get("/recurring_tasks")
