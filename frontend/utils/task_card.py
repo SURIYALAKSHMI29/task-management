@@ -58,6 +58,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                             "priority": task.get("priority"),
                             "status": task.get("status"),
                             "pinned": task.get("pinned"),
+                            "group": task.get("group_id"),
                             "repetitive": task.get("repetitive_type"),
                             "repeat_until": task.get("repeat_until"),
                             "deadline": task.get("deadline"),
