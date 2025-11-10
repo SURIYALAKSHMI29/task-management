@@ -14,11 +14,15 @@ def load_user_details():
     user_data = st.session_state.user
     st.session_state.user_email = user_data["email"]
     st.session_state.user_workspaces = user_data["workspaces"]
-    st.session_state.user_groups = user_data["user_groups"]
+    st.session_state.user_groups = user_data["groups"]
+
     workspace_groups = []
-    workspace_groups = [
-        group for ws in st.session_state.user_workspaces for group in ws["groups"]
-    ]
+    for workspace in st.session_state.user_workspaces:
+        other_groups = [
+            g for g in workspace["groups"] if g["created_by"] != user_data["id"]
+        ]
+        workspace_groups.extend(other_groups)
     st.session_state.user_groups.extend(workspace_groups)
     st.session_state.user_workspace = st.session_state.user_workspaces[0]
+    print("User groups", st.session_state.user_groups)
     load_and_categorize_tasks()
