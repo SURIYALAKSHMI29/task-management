@@ -1,10 +1,9 @@
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr
-
 from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
 from backend.models import Workspace
+from pydantic import BaseModel, EmailStr
 
 
 class UserIn(BaseModel):
@@ -27,6 +26,24 @@ class TaskIn(BaseModel):
     status: Optional[TaskStatus] = TaskStatus.PENDING
     priority: Optional[TaskPriority] = TaskPriority.MEDIUM
     pinned: Optional[bool] = False
+    group_id: Optional[int] = None
+
+
+class TaskCreatePayload(BaseModel):
+    task_in: TaskIn
+    new_group: Optional[str] = None
+    workspace: Optional[bool] = False
+    repetitive_type: Optional[RecurrenceType] = None
+    repeat_until: Optional[date] = None
+
+
+class TaskUpdatePayload(BaseModel):
+    task_in: TaskIn
+    new_group: Optional[str] = None
+    workspace: Optional[bool] = False
+    repetitive_type: Optional[RecurrenceType] = None
+    repeat_until: Optional[date] = None
+    remove_recurring: Optional[bool] = False
 
 
 class TaskOut(BaseModel):
@@ -37,6 +54,7 @@ class TaskOut(BaseModel):
     priority: TaskPriority
     status: TaskStatus
     pinned: bool
+    group_id: Optional[int] = None
     repetitive_type: Optional[RecurrenceType] = None
     repeat_until: Optional[date] = None
     model_config = {"from_attributes": True}  # allows reading from ORM/SQLModel objects
@@ -59,9 +77,10 @@ class WorkspaceOut(BaseModel):
 
 
 class UserOut(BaseModel):
+    id: int
     name: str
     email: EmailStr
-    user_groups: List[GroupOut] = []
+    groups: List[GroupOut] = []
     workspaces: List[WorkspaceOut] = []
     model_config = {"from_attributes": True}
 
