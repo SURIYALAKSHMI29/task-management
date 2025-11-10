@@ -1,9 +1,5 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException
-from pydantic import EmailStr
-from sqlmodel import Session, select
-
 from backend.database import get_session
 from backend.helpers.auth.auth_utils import (
     generate_user_login_response,
@@ -19,6 +15,9 @@ from backend.models import (
     Workspace,
 )
 from backend.schemas import TaskOut, UserIn, UserLoginResponse, UserOut
+from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import EmailStr
+from sqlmodel import Session, select
 
 router = APIRouter()
 
@@ -46,10 +45,6 @@ def validate_email(email: EmailStr, session: Session) -> bool:
     if user:
         raise HTTPException(status_code=409, detail="User already exists")
     return True
-
-
-def get_tasks_from_groups(groups: List["Group"]):
-    return [task for group in groups for task in group.tasks]
 
 
 @router.post("/login", response_model=UserLoginResponse)
@@ -101,15 +96,22 @@ def get_all_tasks(
 ):
     user_email = current_user["user_email"]
     user = get_user_by_email(user_email, session)
-    tasks = user.tasks
-    tasks_from_user_groups = get_tasks_from_groups(user.groups)
+
+    tasks = {task.id: task for task in user.tasks}
+
+    for group in user.groups:
+        for task in group.tasks:
+            tasks[task.id] = task
+
     for workspace in user.workspaces:
-        tasks.extend(get_tasks_from_groups(workspace.groups))
-    tasks.extend(tasks_from_user_groups)
+        for group in workspace.groups:
+            if group.created_by != user.id:
+                for task in group.tasks:
+                    tasks[task.id] = task
 
     user_tasks = []
 
-    for task in user.tasks:
+    for task in tasks.values():
         user_task = TaskOut.model_validate(task)
         if task.recurring_task:
             recurring_info = session.get(RecurringTask, task.recurring_task.id)
