@@ -8,6 +8,12 @@ from utils.task_card import display_tasks
 
 inject_css()
 
+
+def reset_edit_task():
+    st.session_state["edit_task"] = None
+    show_task()
+
+
 task_header = st.columns([1, 0.1])
 with task_header[0]:
     st.markdown(
@@ -18,7 +24,7 @@ with task_header[0]:
     )
 with task_header[1]:
     st.markdown(" ")
-    st.button("Add Task", on_click=show_task)
+    st.button("Add Task", on_click=reset_edit_task)
 
 overdue_tasks = st.session_state.overdue_tasks
 today_tasks = st.session_state.today_tasks
