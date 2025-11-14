@@ -3,7 +3,11 @@ from datetime import date, timedelta
 from typing import Optional
 
 from backend.database import engine, get_session
-from backend.helpers.auth.auth_utils import get_current_user, verify_current_user
+from backend.helpers.auth.auth_utils import (
+    get_current_user,
+    verify_current_user,
+    verify_task_access,
+)
 from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
 from backend.models import (
     Group,
@@ -75,7 +79,7 @@ def get_valid_user_workspace(user: User):
 
 
 def get_group_id(group_details, user_id: int, session: Session):
-    new_group = group_details.name
+    new_group = group_details["name"]
     existing_group = session.exec(
         select(Group).where(Group.name == new_group, Group.created_by == user_id)
     ).first()
@@ -87,8 +91,8 @@ def get_group_id(group_details, user_id: int, session: Session):
         "created_by": user_id,
     }
 
-    if group_details.workspace_id:
-        group_data["workspace_id"] = group_details.workspace_id
+    if group_details["workspace_id"]:
+        group_data["workspace_id"] = group_details["workspace_id"]
 
     new_group = Group(**group_data)
     add_to_db(new_group, session)
@@ -203,7 +207,7 @@ def get_task(
     session: Session = Depends(get_session),
 ):
     task = get_task_by_id(id, session)
-    if verify_current_user(task.user_id, current_user["user_email"], session):
+    if verify_task_access(task, current_user["user_email"], session):
         return bind_task_details(task)
     return
 
@@ -256,7 +260,7 @@ def update_task(
     user_email = current_user["user_email"]
     user = get_user_by_email(user_email, session)
     task = get_task_by_id(id, session)
-    if not verify_current_user(task.user_id, user_email, session):
+    if not verify_task_access(task, user_email, session):
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
     task_data = payload.task_in.model_dump(exclude_unset=True)
@@ -314,7 +318,7 @@ def complete_task(
 ):
     print(id)
     task = get_task_by_id(id, session)
-    if verify_current_user(task.user_id, current_user["user_email"], session):
+    if verify_task_access(task, current_user["user_email"], session):
         updateTaskHistory(task, TaskStatus.COMPLETED, session, task.user_id, start, end)
         session.refresh(task)
         return bind_task_details(task)
@@ -329,7 +333,7 @@ def delete_task(
 ):
     task = get_task_by_id(id, session)
     msg = "Access denied"
-    if verify_current_user(task.user_id, current_user["user_email"], session):
+    if verify_task_access(task, current_user["user_email"], session):
         session.delete(task)
         session.commit()
         msg = "Task Deleted successfully"
@@ -343,7 +347,7 @@ def get_task_history(
     session: Session = Depends(get_session),
 ):
     task = get_task_by_id(id, session)
-    if verify_current_user(task.user_id, current_user["user_email"], session):
+    if verify_task_access(task, current_user["user_email"], session):
         return task.task_history
 
 
