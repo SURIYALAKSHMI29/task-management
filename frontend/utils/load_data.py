@@ -23,6 +23,7 @@ def load_user_details():
         ]
         workspace_groups.extend(other_groups)
     st.session_state.user_groups.extend(workspace_groups)
-    st.session_state.user_workspace = st.session_state.user_workspaces[0]
+    if len(st.session_state.user_workspaces) > 0:
+        st.session_state.user_workspace = st.session_state.user_workspaces[0]
     print("User groups", st.session_state.user_groups)
     load_and_categorize_tasks()
