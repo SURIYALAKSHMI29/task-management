@@ -28,8 +28,9 @@ def register_page(modal: Modal):
                     "name": name,
                     "email": email,
                     "password": password,
-                    "workspaces": [workspace],
                 }
+                if workspace:
+                    payload["workspace"] = [workspace]
                 response = requests.post(f"{backend_url}/register", json=payload)
                 if response.status_code == 201:
                     data = response.json()
