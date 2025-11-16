@@ -35,4 +35,3 @@ def login_page(modal: Modal):
                 st.error(f"Error: {e}")
         else:
             st.error("Please enter email and password")
-            st.error("Please enter email and password")
