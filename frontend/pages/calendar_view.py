@@ -9,7 +9,8 @@ from utils.add_task import show_task
 def calendar_view(tasks, calendar_options, include_end=False):
     custom_css = """
             .fc-event-past {
-                opacity: 0.8;
+                background-color: #990000 !important;
+                border-color: #880000 !important;
             }
             .fc-event-time {
                 display: none;
@@ -20,10 +21,7 @@ def calendar_view(tasks, calendar_options, include_end=False):
             .fc-toolbar-title {
                 font-size: 2rem;
             }
-            .fc-event {
-                cursor: pointer;
-            }
-            .fc-daygrid-day {
+            .fc-event, .fc-daygrid-day {
                 cursor: pointer;
             }
         """
@@ -51,9 +49,9 @@ def calendar_view(tasks, calendar_options, include_end=False):
                 "start": start,
                 "end": end,
                 "color": (
-                    "#990000"
+                    "#ef4444"
                     if task.get("priority") == "high"
-                    else ("#4B7DC9" if task.get("priority") == "medium" else "#AAADAF")
+                    else ("#f59e0b" if task.get("priority") == "medium" else "#10b981")
                 ),
                 "extendedProps": {
                     "description": task.get("description", ""),
