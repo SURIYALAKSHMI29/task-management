@@ -10,6 +10,9 @@ def switch_group_type():
     st.session_state.user_group_view = not st.session_state.user_group_view
 
 
+def search_groups(): ...
+
+
 group_cols = st.columns([2, 0.1, 0.2])
 
 group_type = (
@@ -33,3 +36,13 @@ with group_cols[2]:
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 st.markdown(" ")
+
+st.text_input(
+    "Search Task Groups",
+    "",
+    key="group_search",
+    label_visibility="hidden",
+    placeholder="Search Task Groups",
+    on_change=search_groups,
+    width=500,
+)
