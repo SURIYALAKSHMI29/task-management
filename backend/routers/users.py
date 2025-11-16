@@ -6,14 +6,7 @@ from backend.helpers.auth.auth_utils import (
     get_current_user,
 )
 from backend.helpers.auth.password import hash_password, verify_password
-from backend.models import (
-    Group,
-    RecurringTask,
-    Task,
-    User,
-    UserWorkspaceLink,
-    Workspace,
-)
+from backend.models import Group, RecurringTask, User, UserWorkspaceLink, Workspace
 from backend.schemas import TaskOut, UserIn, UserLoginResponse, UserOut
 from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import EmailStr
@@ -67,6 +60,7 @@ def register_new_user(user: UserIn, session: Session = Depends(get_session)):
         session.commit()
         session.refresh(user_data)
 
+        print(user.workspaces)
         for user_workspace in user.workspaces:
             workspace = session.exec(
                 select(Workspace).where(Workspace.name == user_workspace)
@@ -113,6 +107,17 @@ def get_all_tasks(
 
     for task in tasks.values():
         user_task = TaskOut.model_validate(task)
+        if task.group_id:
+            group = session.get(Group, task.group_id)
+            if group:
+                user_task.group_name = group.name
+
+                if group.workspace_id:
+                    workspace = session.get(Workspace, group.workspace_id)
+                    if workspace:
+                        user_task.workspace_name = workspace.name
+                        user_task.workspace_id = workspace.id
+
         if task.recurring_task:
             recurring_info = session.get(RecurringTask, task.recurring_task.id)
             if recurring_info:
