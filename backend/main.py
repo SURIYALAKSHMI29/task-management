@@ -1,11 +1,10 @@
 from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI
-
 from backend.database import create_db_and_tables
-from backend.routers import tasks, users
+from backend.routers import groups, tasks, users, workspaces
 from backend.routers.tasks import scheduled_task_updates
+from fastapi import FastAPI
 
 app = FastAPI()
 
@@ -26,3 +25,5 @@ def on_startup():
 
 app.include_router(users.router, prefix="/user", tags=["user"])
 app.include_router(tasks.router, prefix="/task", tags=["task"])
+app.include_router(workspaces.router, prefix="/workspace", tags=["workspace"])
+app.include_router(groups.router, prefix="/group", tags=["group"])
