@@ -33,6 +33,7 @@ class User(SQLModel, table=True):
 class Workspace(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+    description: Optional[str] = Field(default=None)
     created_at: date = Field(default_factory=date.today)
     created_by: int = Field(foreign_key="user.id")
     users: List["User"] = Relationship(
@@ -48,6 +49,7 @@ class Workspace(SQLModel, table=True):
 class Group(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+    description: Optional[str] = Field(default=None)
     workspace_id: Optional[int] = Field(default=None, foreign_key="workspace.id")
     workspace: "Workspace" = Relationship(back_populates="groups")
     tasks: List["Task"] = Relationship(
