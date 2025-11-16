@@ -14,6 +14,7 @@ class UserIn(BaseModel):
 
 
 class BaseUserOut(BaseModel):
+    id: int
     name: str
     email: EmailStr
 
@@ -55,6 +56,9 @@ class TaskOut(BaseModel):
     status: TaskStatus
     pinned: bool
     group_id: Optional[int] = None
+    group_name: Optional[str] = None
+    workspace_id: Optional[int] = None
+    workspace_name: Optional[str] = None
     repetitive_type: Optional[RecurrenceType] = None
     repeat_until: Optional[date] = None
     model_config = {"from_attributes": True}  # allows reading from ORM/SQLModel objects
@@ -71,8 +75,10 @@ class GroupOut(BaseModel):
 class WorkspaceOut(BaseModel):
     id: int
     name: str
+    description: Optional[str]
     groups: List[GroupOut] = []
     created_by: int
+    created_at: date
     model_config = {"from_attributes": True}
 
 
