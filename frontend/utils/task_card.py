@@ -1,15 +1,30 @@
+from html import escape
+
 import streamlit as st
 from utils.task_util import complete_task, delete_task, edit_task
 
 
+def get_priority_color(priority):
+    """Get color based on priority level"""
+    priority_colors = {
+        "high": "#ef4444",
+        "medium": "#f59e0b",
+        "low": "#10b981",
+    }
+    return priority_colors.get(priority.lower() if priority else "medium", "#6b7280")
+
+
 def display_task(task, completed, icon, section_name, task_width, button_width):
     deadline = task.get("deadline")
-    # print(type(deadline), deadline, "condition status", (deadline is None))
     if not deadline:
-        # print(task.get("start"), task.get("end"), task)
         deadline = f"{task.get('start')} - {task.get('end')}"
 
     unique_key = f"{section_name}-{task['id']}-{task.get('start')}"
+    priority_color = get_priority_color(task.get("priority", "medium"))
+
+    workspace_name = task.get("workspace_name")
+    group_name = task.get("group_name")
+    scope_icon = "🏢" if workspace_name else "👤"
 
     script = """<div id="task_container_outer"></div>"""
     st.markdown(script, unsafe_allow_html=True)
@@ -19,24 +34,42 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
         script = """<div id='task_container_inner'></div>"""
         st.markdown(script, unsafe_allow_html=True)
         cols = st.columns([task_width, button_width])
+
         with cols[0]:
+            badges_html = ""
+            if group_name:
+                badges_html += f'<span class="task-badge task-badge-group">📁 {escape(group_name)}</span>'
+            if workspace_name:
+                badges_html += f'<span class="task-badge task-badge-workspace">🏢 {escape(workspace_name)}</span>'
+
             repetitive_html = ""
             if task.get("repetitive_type"):
-                repetitive_html = f'<div class="taskRepetitive">Repetitive: {task["repetitive_type"].capitalize()}</div>'
+                repetitive_html = f'<span class="task-badge task-badge-repeat">🔄 {task["repetitive_type"].capitalize()}</span>'
+
+            status_html = ""
+            if completed:
+                status_html = f'<div class="task-completed-stamp">✓ Completed on {task.get("completed_at")}</div>'
 
             st.markdown(
                 f"""
-                <div class="taskContainer">
-                    <span class="taskIcon">{icon if icon else ''}</span>
-                    <div class="taskTitle {"icon" if icon else ""}">{task.get('title')}</div>
-                    <div class="taskDescription">{task['description']}</div>
-                    <div class="taskInfo">
-                        <div class="taskDeadline">Deadline: {deadline}</div>
-                        <div class="taskPriority">Priority: {task['priority'].capitalize()}</div>
-                        {repetitive_html}</div>
+                <div class="task-card {('task-completed' if completed else '')}" style="border-left: 4px solid {priority_color};">
+                    <div class="task-header">
+                        <div class="task-title-row">
+                            <span class="task-scope-icon">{scope_icon}</span>
+                            <div class="task-title">{task.get("title")}</div>
+                        </div>
+                        <div class="task-priority-badge" style="background: {priority_color};">
+                            {task['priority'].capitalize()}
+                        </div>
+                    </div>
+                    <div class="task-description">{task.get("description")}</div>
+                    <div class="task-badges">{badges_html}{repetitive_html}</div>
+                    <div class="task-metadata">
+                        <span class="task-deadline">📅 {deadline}</span>
+                    </div>
+                    {status_html}
                 </div>
-
-            """,
+                """,
                 unsafe_allow_html=True,
             )
 
@@ -47,6 +80,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                 script = """<div id='button_container_inner'></div>"""
                 st.markdown(script, unsafe_allow_html=True)
                 buttons = st.columns([1, 1, 1])
+
                 with buttons[0]:
                     edited_task = {
                         "id": task.get("id"),
@@ -72,6 +106,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                         args=[edited_task],
                         help="Edit",
                     )
+
                 with buttons[1]:
                     st.button(
                         "✔",
@@ -81,6 +116,7 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                         args=[task],
                         help="Mark as Done",
                     )
+
                 with buttons[2]:
                     st.button(
                         "🗑",
@@ -88,45 +124,36 @@ def display_task(task, completed, icon, section_name, task_width, button_width):
                         key=f"delete-{unique_key}",
                         on_click=delete_task,
                         args=[task],
-                        help="Deleting a repetitive task will remove its entire history. To stop it, update the deadline(repeat until) instead",
+                        help="Deleting a repetitive task will remove its entire history",
                     )
-            else:
-                st.markdown(
-                    f"""
-                    <div class="completedDate">
-                        {task.get('completed_at')}
-                        <span style="font-size:1.2em; color: darkgreen">✓</span>
-                    </div>""",
-                    unsafe_allow_html=True,
-                )
 
+    # Inject custom CSS
     st.markdown(
         """<style>
             div[data-testid='stVerticalBlock']:has(div#task_container_inner):not(:has(div#task_container_outer)) {
-                padding: 0px 10px;
-                background-color: #222;
-                border-radius: 10px;
+                padding: 0px;
+                background: #222327;
+                border-radius: 8px;
+                transition: all 0.2s ease;
                 margin-bottom: -30px;
             }
 
             div[data-testid='stVerticalBlock']:has(div#task_container_inner):not(:has(div#task_container_outer)):hover{
-                background-color: #333;
-                transform: translateX(8px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                transition: 0.3s;
-                cursor: pointer;
+                transform: translateX(4px);
+                transition: all 0.2s ease;
+                background: #2a2a2f;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
             }
 
             div[data-testid='stVerticalBlock']:has(div#button_container_inner):not(:has(div#button_container_outer)) {
                 opacity: 0;
+                transition: opacity 0.2s ease;
             }
 
-            div[data-testid='stVerticalBlock']:has(div#task_container_inner):not(:has(div#task_container_outer)):hover div[data-testid='stVerticalBlock']:has(div#button_container_inner):not(:has(div#button_container_outer)){
+            div[data-testid='stVerticalBlock']:has(div#task_container_inner):not(:has(div#task_container_outer)):hover 
+            div[data-testid='stVerticalBlock']:has(div#button_container_inner):not(:has(div#button_container_outer)){
                 opacity: 1;
-                background-color: #333;
-                transition: 0.3s;
             }
-            
         </style>
         """,
         unsafe_allow_html=True,
