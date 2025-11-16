@@ -70,3 +70,6 @@ def initialize_sessions():
 
     if "user_workspace" not in st.session_state:
         st.session_state["user_workspace"] = None
+
+    if "selected_task_ids" not in st.session_state:
+        st.session_state.selected_task_ids = set()
