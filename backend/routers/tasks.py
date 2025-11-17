@@ -2,6 +2,11 @@ import calendar
 from datetime import date, timedelta
 from typing import Optional
 
+from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import EmailStr
+from sqlalchemy.orm import joinedload
+from sqlmodel import Session, select
+
 from backend.database import engine, get_session
 from backend.helpers.auth.auth_utils import (
     get_current_user,
@@ -16,14 +21,10 @@ from backend.models import (
     TaskHistory,
     User,
     UserWorkspaceLink,
-    Workspace,
 )
+from backend.routers.groups import get_group_by_id
 from backend.routers.users import get_user_by_email
-from backend.schemas import TaskCreatePayload, TaskIn, TaskOut, TaskUpdatePayload
-from fastapi import APIRouter, Body, Depends, HTTPException
-from pydantic import EmailStr
-from sqlalchemy.orm import joinedload
-from sqlmodel import Session, select
+from backend.schemas import TaskCreatePayload, TaskOut, TaskUpdatePayload
 
 router = APIRouter()
 
@@ -46,11 +47,19 @@ def add_to_db(obj, session: Session):
 
 
 # bind task and its recurrence info
-def bind_task_details(task: Task) -> TaskOut:
+def bind_task_details(task: Task, session: Session) -> TaskOut:
     task_details = TaskOut.model_validate(task)
     if task.recurring_task:
         task_details.repetitive_type = task.recurring_task.repetitive_type
         task_details.repeat_until = task.recurring_task.repeat_until
+    if task.group:
+        group_data = get_group_by_id(task.group_id, session)
+        print("group details: ", group_data)
+        task_details.group_id = group_data["group_id"]
+        task_details.group_name = group_data["group_name"]
+        task_details.workspace_id = group_data.get("workspace_id")
+        task_details.workspace_name = group_data.get("workspace_name")
+
     return task_details
 
 
@@ -91,7 +100,7 @@ def get_group_id(group_details, user_id: int, session: Session):
         "created_by": user_id,
     }
 
-    if group_details["workspace_id"]:
+    if group_details.get("workspace_id"):
         group_data["workspace_id"] = group_details["workspace_id"]
 
     new_group = Group(**group_data)
@@ -208,7 +217,7 @@ def get_task(
 ):
     task = get_task_by_id(id, session)
     if verify_task_access(task, current_user["user_email"], session):
-        return bind_task_details(task)
+        return bind_task_details(task, session)
     return
 
 
@@ -247,7 +256,7 @@ def add_task(
 
     updateTaskHistory(task, TaskStatus.PENDING, session)
 
-    return bind_task_details(task)
+    return bind_task_details(task, session)
 
 
 @router.patch("/update-task/{id}")
@@ -305,7 +314,7 @@ def update_task(
             session.add(recurring_task)
 
     task = add_to_db(task, session)
-    return bind_task_details(task)
+    return bind_task_details(task, session)
 
 
 @router.patch("/complete-task/{id}/{start}/{end}")
@@ -321,7 +330,7 @@ def complete_task(
     if verify_task_access(task, current_user["user_email"], session):
         updateTaskHistory(task, TaskStatus.COMPLETED, session, task.user_id, start, end)
         session.refresh(task)
-        return bind_task_details(task)
+        return bind_task_details(task, session)
     return
 
 
@@ -360,12 +369,23 @@ def get_history(
     user_id = get_user_by_email(email, session).id
     # print(user_id)
     if verify_current_user(user_id, current_user["user_email"], session):
+        workspace_ids = session.exec(
+            select(UserWorkspaceLink).where(UserWorkspaceLink.user_id == user_id)
+        ).all()
+        workspace_ids = [w.workspace_id for w in workspace_ids]
+
+        group_ids = session.exec(
+            select(Group.id).where(Group.workspace_id.in_(workspace_ids))
+        ).all()
+
         tasks = session.exec(
-            select(Task, TaskHistory).join(TaskHistory).where(Task.user_id == user_id)
-        )
+            select(Task, TaskHistory)
+            .join(TaskHistory)
+            .where((Task.user_id == user_id) | (Task.group_id.in_(group_ids)))
+        ).all()
         history_list = []
         for task, history in tasks:
-            task_data = bind_task_details(task).model_dump()
+            task_data = bind_task_details(task, session).model_dump()
             history_data = history.model_dump()
             history_data.pop("id")
             task_history = {**task_data, **history_data}
@@ -379,6 +399,13 @@ def get_history(
     #     return session.exec(select(RecurringTask)).all()
 
     # return []
+
+
+# @router.get("/recurring_tasks")
+# def recurring_tasks(session: Session = Depends(get_session)):
+#     return session.exec(select(RecurringTask)).all()
+
+# return []
 
 
 # @router.get("/recurring_tasks")
