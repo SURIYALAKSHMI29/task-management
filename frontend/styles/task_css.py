@@ -11,12 +11,6 @@ CSS = """
 
     .task-card:hover {
         background: #2a2a2f;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
-
-    .task-completed {
-        opacity: 0.85;
-        background: #1a1a1d !important;
     }
 
     .task-header {
