@@ -4,7 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 
 from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
-from backend.models import Workspace
 
 
 class UserIn(BaseModel):
@@ -96,4 +95,3 @@ class UserOut(BaseModel):
 class UserLoginResponse(BaseModel):
     user: UserOut
     access_token: str
-    token_type: str
