@@ -1,5 +1,9 @@
 from typing import List, Optional
 
+from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import EmailStr
+from sqlmodel import Session, select
+
 from backend.database import get_session
 from backend.helpers.auth.auth_utils import (
     generate_user_login_response,
@@ -8,9 +12,6 @@ from backend.helpers.auth.auth_utils import (
 from backend.helpers.auth.password import hash_password, verify_password
 from backend.models import Group, RecurringTask, User, UserWorkspaceLink, Workspace
 from backend.schemas import TaskOut, UserIn, UserLoginResponse, UserOut
-from fastapi import APIRouter, Body, Depends, HTTPException
-from pydantic import EmailStr
-from sqlmodel import Session, select
 
 router = APIRouter()
 
