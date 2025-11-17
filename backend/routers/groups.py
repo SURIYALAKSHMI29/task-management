@@ -1,15 +1,29 @@
 from typing import List, Optional
 
+from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import EmailStr
+from sqlmodel import Session, select
+
 from backend.database import get_session
 from backend.helpers.auth.auth_utils import get_current_user
 from backend.models import Group, Task, Workspace
 from backend.routers.users import get_user_by_email
 from backend.routers.workspaces import is_member
-from fastapi import APIRouter, Body, Depends, HTTPException
-from pydantic import EmailStr
-from sqlmodel import Session, select
 
 router = APIRouter()
+
+
+def get_group_by_id(id: int, session: Session):
+    group = session.get(Group, id)
+    group_data = {"group_id": group.id, "group_name": group.name}
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    if group.workspace:
+        workspace = session.get(Workspace, group.workspace_id)
+        group_data["workspace_name"] = workspace.name
+        group_data["workspace_id"] = workspace.id
+
+    return group_data
 
 
 @router.post("/create-group")
@@ -50,5 +64,4 @@ def create_group(
 
     session.commit()
     session.refresh(group)
-
     return group
