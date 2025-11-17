@@ -30,10 +30,10 @@ def create_workspace(workspace_name, workspace_desc):
     if response.status_code == 200:
         st.success("Workspace created!")
         st.session_state.user_workspace = response.json()
-        print(
-            "returning user_workspace: ",
-            st.session_state.user_workspace,
-        )
+        # print(
+        #     "returning user_workspace: ",
+        #     st.session_state.user_workspace,
+        # )
         time.sleep(1)
         st.cache_data.clear()
         st.rerun()
@@ -48,16 +48,16 @@ def join_workspace(workspace_name):
     response = requests.post(
         f"{backend_url}/join-workspace",
         headers=header,
-        json={"workspace_name": workspace_name},
+        json=workspace_name,
     )
 
     if response.status_code == 200:
         st.success("Joined workspace!")
         st.session_state.user_workspace = response.json()
-        print(
-            "returning user_workspace: ",
-            st.session_state.user_workspace,
-        )
+        # print(
+        #     "returning user_workspace: ",
+        #     st.session_state.user_workspace,
+        # )
         time.sleep(1)
         st.cache_data.clear()
         st.rerun()
@@ -69,7 +69,7 @@ def join_workspace(workspace_name):
 # Fetch workspace data
 def get_workspace_data():
     workspace = st.session_state.user_workspace
-    print("User workspace:", workspace)
+    # print("User workspace:", workspace)
 
     if workspace:
         backend_url = st.secrets["backend"]["workspace_url"]
@@ -78,7 +78,7 @@ def get_workspace_data():
 
         if response.status_code == 200:
             workspace_data = response.json()
-            print("Workspace data", workspace_data)
+            # print("Workspace data", workspace_data)
         else:
             st.error(
                 f"Failed to fetch workspaces: {response.status_code} - {response.text}"
