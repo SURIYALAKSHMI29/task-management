@@ -36,7 +36,7 @@ def register_page(modal: Modal):
                     data = response.json()
                     st.success("Registered successfully!")
                     st.session_state.logged_in = True
-                    time.sleep(2)
+                    time.sleep(1)
                     st.session_state.access_token = data.get("access_token")
                     st.session_state.user = data.get("user")
                     load_user_details()

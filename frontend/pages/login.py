@@ -21,7 +21,7 @@ def login_page(modal: Modal):
                     data = response.json()
                     st.session_state.logged_in = True
                     st.success("Logged in successfully!")
-                    time.sleep(2)
+                    time.sleep(1)
                     st.session_state.access_token = data.get("access_token")
                     st.session_state.user = data.get("user")
                     print("user", st.session_state.user)
