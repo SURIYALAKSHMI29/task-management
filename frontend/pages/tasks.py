@@ -1,12 +1,18 @@
 from datetime import date, datetime, timedelta
 
+import requests
 import streamlit as st
 from pages.calendar_view import calendar_view
 from styles.task_css import inject_css
 from utils.add_task import show_task
+from utils.load_data import load_and_categorize_tasks
 from utils.task_card import display_tasks
 
 inject_css()
+
+
+def sync_workspace():
+    load_and_categorize_tasks()
 
 
 def reset_edit_task():
@@ -89,7 +95,7 @@ calendar_options = {
     "selectable": False,
 }
 
-toolbar_cols = st.columns([3, 2, 0.2, 0.8, 0.8])
+toolbar_cols = st.columns([3, 1.8, 0.15, 0.15, 0.8, 0.8])
 
 with toolbar_cols[0]:
     st.text_input(
@@ -99,7 +105,16 @@ with toolbar_cols[0]:
         label_visibility="collapsed",
     )
 
-with toolbar_cols[2]:
+if st.session_state.user_workspace:
+    with toolbar_cols[2]:
+        st.button(
+            "🔄",
+            type="tertiary",
+            help="Sync workspace",
+            on_click=sync_workspace,
+        )
+
+with toolbar_cols[3]:
     if st.session_state.list_view:
         st.button(
             "🗓️",
@@ -115,7 +130,7 @@ with toolbar_cols[2]:
             on_click=change_task_view,
         )
 
-with toolbar_cols[3]:
+with toolbar_cols[4]:
     st.selectbox(
         "Filter",
         ["Repetivity", "Daily", "Weekly", "Monthly"],
@@ -123,7 +138,7 @@ with toolbar_cols[3]:
         label_visibility="collapsed",
     )
 
-with toolbar_cols[4]:
+with toolbar_cols[5]:
     st.selectbox(
         "Filter",
         ["Priority", "High", "Medium", "Low"],
