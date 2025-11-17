@@ -70,11 +70,23 @@ def extend_tasks_and_sort(tasks, category, priority_order):
     st.session_state[category].extend(tasks)
     st.session_state[category] = sort_tasks(st.session_state[category], priority_order)
 
-    print("\n category:", category, "\n", st.session_state[category], "\n")
+    # print("\n category:", category, "\n", st.session_state[category], "\n")
+
+
+def categorize_into_group(task):
+    if task.get("workspace_id"):
+        group_list = st.session_state.workspace_groups[task["workspace_id"]][
+            task["group_id"]
+        ]
+    else:
+        group_list = st.session_state.personal_groups[task["group_id"]]
+
+    if not any(t["id"] == task["id"] for t in group_list):
+        group_list.append(task)
 
 
 def categorize_tasks(user_tasks, user_task_history):
-    print("\n\ntasks came in to categorize", user_tasks, "\n")
+    # print("\n\ntasks came in to categorize", user_tasks, "\n")
     today = date.today()
     nearest_sunday = date.today() + timedelta(days=(6 - today.weekday()) % 7)
     nearest_monday = date.today() - timedelta(days=today.weekday())
@@ -99,6 +111,9 @@ def categorize_tasks(user_tasks, user_task_history):
         elif end_date < today:
             # print("added to overdue tasks\n")
             overdue_tasks.append(task)
+
+        if task.get("group_id"):
+            categorize_into_group(task)
 
     extend_tasks_and_sort(completed_tasks, "completed_tasks", priority_order)
     extend_tasks_and_sort(overdue_tasks, "overdue_tasks", priority_order)
@@ -177,11 +192,17 @@ def categorize_tasks(user_tasks, user_task_history):
                 else:
                     overdue_tasks.append(task)
 
-    print("After categorizing,\n")
+            if task.get("group_id"):
+                categorize_into_group(task)
+
+    # print("After categorizing,\n")
     extend_tasks_and_sort(today_tasks, "today_tasks", priority_order)
     extend_tasks_and_sort(pinned_tasks, "pinned_tasks", priority_order)
     extend_tasks_and_sort(weekly_tasks, "weekly_tasks", priority_order)
     st.session_state.upcoming_tasks.extend(upcoming_tasks)
+
+    print("Personal groups:", st.session_state.personal_groups)
+    print("Workspace groups:", st.session_state.workspace_groups)
 
 
 def get_str_date(date):
@@ -196,7 +217,7 @@ def remove_task_from_categories(task, categories, remove_all=False):
     task_start = get_str_date(task.get("start"))
     task_end = get_str_date(task.get("end"))
 
-    print("\n\nTask came to remove:", task)
+    # print("\n\nTask came to remove:", task)
     for category in categories:
         st.session_state[category] = [
             t
@@ -212,7 +233,7 @@ def remove_task_from_categories(task, categories, remove_all=False):
                 )
             )
         ]
-        print("Removed task from category:", category, "\n", st.session_state[category])
+        # print("Removed task from category:", category, "\n", st.session_state[category])
 
 
 def edit_task(task):
@@ -270,6 +291,6 @@ def delete_task(task):
         ]
         # task and its recurrences
         remove_task_from_categories(task, categories, remove_all=True)
-        print("Task deleted successfully!")
+        # print("Task deleted successfully!")
     else:
         print(f"Failed to fetch tasks: {response.status_code} - {response.text}")
