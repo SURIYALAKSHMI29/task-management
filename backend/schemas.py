@@ -1,9 +1,10 @@
 from datetime import date
 from typing import List, Optional
 
+from pydantic import BaseModel, EmailStr
+
 from backend.helpers.enums import RecurrenceType, TaskPriority, TaskStatus
 from backend.models import Workspace
-from pydantic import BaseModel, EmailStr
 
 
 class UserIn(BaseModel):
@@ -68,6 +69,7 @@ class GroupOut(BaseModel):
     id: int
     name: str
     tasks: List[TaskOut] = []
+    workspace_id: Optional[int]
     created_by: int
     model_config = {"from_attributes": True}
 
