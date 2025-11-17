@@ -7,6 +7,13 @@ def load_and_categorize_tasks():
     get_user_history(st.session_state.user_email)
     user_tasks = st.session_state.user_tasks
     user_task_history = st.session_state.user_task_history
+    st.session_state.today_tasks = []
+    st.session_state.weekly_tasks = []
+    st.session_state.overdue_tasks = []
+    st.session_state.upcoming_tasks = []
+    st.session_state.completed_tasks = []
+    st.session_state.pinned_tasks = []
+
     categorize_tasks(user_tasks, user_task_history)
 
 
@@ -23,6 +30,14 @@ def load_user_details():
         ]
         workspace_groups.extend(other_groups)
     st.session_state.user_groups.extend(workspace_groups)
+
+    for g in st.session_state.user_groups:
+        print("\n", g, "\n")
+        if g.get("workspace_id"):
+            st.session_state.workspace_groups[g["workspace_id"]][g["id"]]
+        else:
+            st.session_state.personal_groups[g["id"]]
+
     if len(st.session_state.user_workspaces) > 0:
         st.session_state.user_workspace = st.session_state.user_workspaces[0]
     print("User groups", st.session_state.user_groups)
