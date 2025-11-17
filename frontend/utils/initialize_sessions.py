@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import streamlit as st
 
 
@@ -62,6 +64,9 @@ def initialize_sessions():
     if "calendar_state" not in st.session_state:
         st.session_state.calendar_state = None
 
+    if "user_group_view" not in st.session_state:
+        st.session_state.user_group_view = True
+
     if "user_groups" not in st.session_state:
         st.session_state["user_groups"] = []
 
@@ -73,3 +78,9 @@ def initialize_sessions():
 
     if "selected_task_ids" not in st.session_state:
         st.session_state.selected_task_ids = set()
+
+    if "workspace_groups" not in st.session_state:
+        st.session_state.workspace_groups = defaultdict(lambda: defaultdict(list))
+
+    if "personal_groups" not in st.session_state:
+        st.session_state.personal_groups = defaultdict(list)
