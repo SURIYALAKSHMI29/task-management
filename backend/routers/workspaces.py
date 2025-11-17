@@ -1,11 +1,12 @@
+from fastapi import APIRouter, Body, Depends, HTTPException
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
+
 from backend.database import get_session
 from backend.helpers.auth.auth_utils import get_current_user
 from backend.models import Group, User, UserWorkspaceLink, Workspace
 from backend.routers.users import get_user_by_email
-from backend.schemas import BaseUserOut
-from fastapi import APIRouter, Body, Depends, HTTPException
-from sqlalchemy.orm import selectinload
-from sqlmodel import Session, select
+from backend.schemas import BaseUserOut, TaskOut, WorkspaceOut
 
 router = APIRouter()
 
@@ -46,6 +47,30 @@ def create_workspace(
     session.commit()
 
     print(workspace)
+    return WorkspaceOut.model_validate(workspace)
+
+
+@router.post("/join-workspace")
+def join_workspace(
+    workspace_name: str = Body(...),
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    user = get_user_by_email(current_user["user_email"], session)
+    workspace = session.exec(
+        select(Workspace).where(Workspace.name == workspace_name)
+    ).first()
+
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+
+    workspace_link = UserWorkspaceLink(
+        user_id=user.id,
+        workspace_id=workspace.id,
+    )
+    session.add(workspace_link)
+    session.commit()
+
     return workspace
 
 
@@ -75,25 +100,21 @@ def get_workspace(
     raise HTTPException(status_code=403, detail="Not allowed, access forbidden")
 
 
-@router.post("/join-workspace")
-def join_workspace(
-    workspace_name: str = Body(...),
-    current_user=Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    user = get_user_by_email(current_user["user_email"], session)
-    workspace = session.exec(
-        select(Workspace).where(Workspace.name == workspace_name)
-    ).first()
+@router.get("/get-tasks/{workspace_id}")
+def get_tasks(workspace_id: int, session: Session = Depends(get_session)):
+    groups = session.exec(
+        select(Group)
+        .where(Group.workspace_id == workspace_id)
+        .options(selectinload(Group.tasks))
+    ).all()
 
-    if not workspace:
-        raise HTTPException(status_code=404, detail="Workspace not found")
+    tasks = []
+    for group in groups:
+        for task in group.tasks:
+            task_out = TaskOut.model_validate(task)
+            task_out.group_name = group.name
+            task_out.workspace_id = group.workspace_id
+            task_out.workspace_name = group.workspace.name
+            tasks.append(task)
 
-    workspace_link = UserWorkspaceLink(
-        user_id=user.id,
-        workspace_id=workspace.id,
-    )
-    session.add(workspace_link)
-    session.commit()
-
-    return workspace
+    return tasks
