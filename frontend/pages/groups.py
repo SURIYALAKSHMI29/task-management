@@ -2,9 +2,6 @@ import streamlit as st
 
 user_groups = st.session_state.user_groups
 
-if "user_group_view" not in st.session_state:
-    st.session_state.user_group_view = True
-
 
 def switch_group_type():
     st.session_state.user_group_view = not st.session_state.user_group_view
@@ -46,3 +43,19 @@ st.text_input(
     on_change=search_groups,
     width=500,
 )
+
+
+if st.session_state.user_group_view:
+    for group_id, task_list in st.session_state.personal_groups.items():
+        st.write("Group ID:", group_id)
+        st.write("Tasks:", task_list)
+    # print("here inside personal groups")
+
+else:
+    # print("here inside workspace groups")
+    for workspace_id, groups in st.session_state.workspace_groups.items():
+        st.write("Workspace ID:", workspace_id)
+        print(workspace_id, groups)
+        for group_id, task_list in groups.items():
+            st.write("  Group ID:", group_id)
+            st.write("  Tasks:", task_list)
