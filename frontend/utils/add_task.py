@@ -164,7 +164,7 @@ def show_task():
         if new_group != st.session_state.new_group_input:
             st.session_state.new_group_input = new_group
 
-    workspace = None
+    workspace = False
     with group_row[2]:
         st.markdown('<div style="height: 1.8rem;"></div>', unsafe_allow_html=True)
         workspace = st.checkbox(
@@ -283,7 +283,7 @@ def show_task():
             payload["repetitive_type"] = repetitive_type
             payload["repeat_until"] = str(repeat_until) if repeat_until else None
 
-        print(payload)
+        print("\nPayload: ", payload, "\n")
 
         backend_url = st.secrets["backend"]["task_url"]
         header = {"Authorization": f"Bearer {st.session_state.access_token}"}
